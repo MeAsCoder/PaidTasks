@@ -36,7 +36,7 @@ export default function Navbar() {
         <nav className="hidden md:flex items-center space-x-8">
           <Link 
             href="/" 
-            className={`py-2 transition ${isActive('/') ? 'text-blue-600 font-semibold border-b-2 border-blue-600' : 'hover:text-blue-600'}`}
+            className={`py-2 transition ${isActive('/') ? 'text-blue-600 font-semibold border-b-2 border-blue-600' : 'hover:text-blue-600 bg-white text-black'}`}
           >
             Home
           </Link>
@@ -45,19 +45,19 @@ export default function Navbar() {
             <>
               <Link 
                 href="/dashboard" 
-                className={`py-2 transition ${isActive('/dashboard') ? 'text-blue-600 font-semibold border-b-2 border-blue-600' : 'hover:text-blue-600'}`}
+                className={`py-2 transition ${isActive('/dashboard') ? 'text-blue-600 font-semibold border-b-2 border-blue-600' : 'hover:text-blue-600 bg-white text-black'}`}
               >
                 Dashboard
               </Link>
               <Link 
                 href="/tasks" 
-                className={`py-2 transition ${isActive('/tasks') ? 'text-blue-600 font-semibold border-b-2 border-blue-600' : 'hover:text-blue-600'}`}
+                className={`py-2 transition ${isActive('/tasks') ? 'text-blue-600 font-semibold border-b-2 border-blue-600' : 'hover:text-blue-600 bg-white text-black'}`}
               >
                 Tasks
               </Link>
               <Link 
                 href="/profile" 
-                className={`py-2 transition ${isActive('/profile') ? 'text-blue-600 font-semibold border-b-2 border-blue-600' : 'hover:text-blue-600'}`}
+                className={`py-2 transition ${isActive('/profile') ? 'text-blue-600 font-semibold border-b-2 border-blue-600' : 'hover:text-blue-600 bg-white text-black'}`}
               >
                 Profile
               </Link>
@@ -72,19 +72,19 @@ export default function Navbar() {
             <>
               <Link 
                 href="/about" 
-                className={`py-2 transition ${isActive('/about') ? 'text-blue-600 font-semibold border-b-2 border-blue-600' : 'hover:text-blue-600'}`}
+                className={`py-2 transition ${isActive('/about') ? 'text-blue-600 font-semibold border-b-2 border-blue-600' : 'hover:text-blue-600 bg-white text-black'}`}
               >
                 About
               </Link>
               <Link 
                 href="/contact" 
-                className={`py-2 transition ${isActive('/contact') ? 'text-blue-600 font-semibold border-b-2 border-blue-600' : 'hover:text-blue-600'}`}
+                className={`py-2 transition ${isActive('/contact') ? 'text-blue-600 font-semibold border-b-2 border-blue-600' : 'hover:text-blue-600 bg-white text-black'}`}
               >
                 Contact
               </Link>
               <Link 
                 href="/auth/login" 
-                className={`py-2 transition ${isActive('/auth/login') ? 'text-blue-600 font-semibold border-b-2 border-blue-600' : 'hover:text-blue-600'}`}
+                className={`py-2 transition ${isActive('/auth/login') ? 'text-blue-600 font-semibold border-b-2 border-blue-600' : 'hover:text-blue-600 bg-white text-black'}`}
               >
                 Login
               </Link>
