@@ -73,7 +73,7 @@ export default function About() {
                 Founded in 2018 by former tech executives, TaskEarn began with a simple idea: create a platform where anyone could earn money by completing microtasks that help businesses improve their products.
               </p>
               <p className="text-gray-700">
-                Today, we've grown into a global marketplace trusted by Fortune 500 companies and independent earners alike, processing millions of tasks monthly while maintaining a 98% satisfaction rate.
+                Today, we&apos;ve grown into a global marketplace trusted by Fortune 500 companies and independent earners alike, processing millions of tasks monthly while maintaining a 98% satisfaction rate.
               </p>
             </div>
           </div>
@@ -143,7 +143,7 @@ export default function About() {
             <h3 className="text-xl font-bold">Maria Perez</h3>
             <p className="text-blue-600 mb-2">CTO</p>
             <p className="text-gray-600">
-              AI and machine learning expert from Stanford's Computer Science program
+              AI and machine learning expert from Stanford&apos;s Computer Science program
             </p>
           </div>
           
@@ -154,7 +154,7 @@ export default function About() {
             <h3 className="text-xl font-bold">Tunde Kolawole</h3>
             <p className="text-blue-600 mb-2">Head of Community</p>
             <p className="text-gray-600">
-              Built Africa's largest gig economy platform before joining TaskEarn
+              Built Africa&apos;s largest gig economy platform before joining TaskEarn
             </p>
           </div>
         </div>

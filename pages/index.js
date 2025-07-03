@@ -306,7 +306,7 @@ useEffect(() => {
                 className={`transition-opacity duration-500 ${activeTestimonial === index ? 'opacity-100' : 'opacity-0 absolute top-0 left-0'}`}
               >
                 <div className="bg-blue-800 p-8 md:p-10 rounded-xl shadow-lg">
-                  <p className="text-xl italic mb-6">"{testimonial.content}"</p>
+                  <p className="text-xl italic mb-6">&quot;{testimonial.content}&quot;</p>
                   <div className="flex items-center">
                     <div className="w-16 h-16 rounded-full bg-blue-600 flex items-center justify-center overflow-hidden">
                       <img 

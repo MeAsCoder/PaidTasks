@@ -56,7 +56,7 @@ export default function ContactPage() {
               Contact Our Team
             </h1>
             <p className="mt-4 text-xl text-gray-600">
-              Have questions or need support? We're here to help!
+              Have questions or need support? We&apos;re here to help!
             </p>
           </div>
 
@@ -129,7 +129,7 @@ export default function ContactPage() {
               <div className="p-8">
                 {submitSuccess && (
                   <div className="mb-6 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded">
-                    <p>Thank you for your message! We'll get back to you soon.</p>
+                    <p>Thank you for your message! We&apos;ll get back to you soon.</p>
                   </div>
                 )}
 

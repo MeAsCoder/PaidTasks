@@ -122,7 +122,7 @@ export default function BusinessSolutions() {
             <div>
               <h3 className="text-2xl font-bold mb-4">Task Design Consultation</h3>
               <p className="text-gray-700">
-                Our solutions team works with you to design tasks that yield the highest quality results. We'll help structure your requirements, set quality parameters, and determine optimal pricing.
+                Our solutions team works with you to design tasks that yield the highest quality results. We&apos;ll help structure your requirements, set quality parameters, and determine optimal pricing.
               </p>
             </div>
           </div>

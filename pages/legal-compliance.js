@@ -30,7 +30,7 @@ export default function LegalCompliance() {
                 <ul className="list-disc pl-6 space-y-2">
                   <li><strong>GDPR</strong> (EU General Data Protection Regulation)</li>
                   <li><strong>CCPA</strong> (California Consumer Privacy Act)</li>
-                  <li><strong>PIPEDA</strong> (Canada's Personal Information Protection Act)</li>
+                  <li><strong>PIPEDA</strong> (Canada&apos;s Personal Information Protection Act)</li>
                 </ul>
                 <p className="italic text-sm text-gray-500">
                   Data Subject Requests (DSARs) may be submitted via <a href="mailto:privacy@yourcompany.com" className="text-blue-600">privacy@yourcompany.com</a>.

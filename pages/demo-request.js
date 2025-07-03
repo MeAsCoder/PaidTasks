@@ -60,7 +60,7 @@ export default function DemoRequest() {
           <div className="text-center py-8">
             <h2 className="text-2xl font-bold text-green-600 mb-4">Thank You!</h2>
             <p className="text-gray-600 mb-6">
-              Your demo request has been submitted. We'll contact you shortly.
+              Your demo request has been submitted. We&apos;ll contact you shortly.
             </p>
             <Link
               href="/"

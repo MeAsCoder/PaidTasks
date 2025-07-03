@@ -144,7 +144,7 @@ export default function ProfilePage() {
           {/* Header with dynamic name */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900">
-              {formData.username || 'User'}'s Profile
+              {formData.username || 'User'}&apos;s Profile
             </h1>
           </div>
 
