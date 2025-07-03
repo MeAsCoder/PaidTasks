@@ -1,6 +1,7 @@
 import Head from 'next/head'
 import Navbar from './Navbar'
 import { motion } from 'framer-motion'
+import Link from 'next/link'
 
 const fadeIn = {
   hidden: { opacity: 0 },
@@ -35,21 +36,47 @@ export default function Layout({ children, title = "TaskEarn - Earn Money Online
               <h3 className="text-xl font-bold mb-4">TaskEarn</h3>
               <p className="text-gray-400">Your reliable platform to earn money online.</p>
             </div>
+
+          
             <div>
               <h4 className="font-semibold mb-4">Quick Links</h4>
               <ul className="space-y-2">
-                <li><a href="/tasks" className="text-gray-400 hover:text-white transition">Tasks</a></li>
-                <li><a href="/about" className="text-gray-400 hover:text-white transition">About Us</a></li>
-                <li><a href="/contact" className="text-gray-400 hover:text-white transition">Contact</a></li>
+                <li>
+                  <Link href="/tasks" className="text-gray-400 hover:text-white transition">
+                    Tasks
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/about" className="text-gray-400 hover:text-white transition">
+                    About Us
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/contact" className="text-gray-400 hover:text-white transition">
+                    Contact
+                  </Link>
+                </li>
               </ul>
             </div>
-            <div>
+
+
+
+                  <div>
               <h4 className="font-semibold mb-4">Legal</h4>
               <ul className="space-y-2">
-                <li><a href="/terms" className="text-gray-400 hover:text-white transition">Terms</a></li>
-                <li><a href="/legal-compliance" className="text-gray-400 hover:text-white transition">Privacy</a></li>
+                <li>
+                  <Link href="/terms" className="text-gray-400 hover:text-white transition">
+                    Terms
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/legal-compliance" className="text-gray-400 hover:text-white transition">
+                    Privacy
+                  </Link>
+                </li>
               </ul>
             </div>
+
             <div>
               <h4 className="font-semibold mb-4">Connect</h4>
               <div className="flex space-x-4">
@@ -58,7 +85,13 @@ export default function Layout({ children, title = "TaskEarn - Earn Money Online
                 <a href="#" className="text-gray-400 hover:text-white transition">Instagram</a>
               </div>
             </div>
+
+
+
           </div>
+
+
+
           <div className="border-t border-gray-700 mt-8 pt-6 text-center text-gray-400">
             <p>© {new Date().getFullYear()} TaskEarn. All rights reserved.</p>
           </div>

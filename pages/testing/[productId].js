@@ -60,7 +60,7 @@ const ProductTestingPage = () => {
                 >
             link
           </a>{' '}
-          below. You'll need to complete 5 tasks within the app.
+          below. You&apos;ll need to complete 5 tasks within the app.
         </p>
       )
     },

@@ -337,7 +337,7 @@ return (
                             >
                               {isOnCooldown ? (
                                 <>
-                                  <FiLock className="mr-2" />
+                                  <FiClock className="mr-2" />
                                   On Cooldown
                                 </>
                               ) : isComplete ? (
@@ -367,7 +367,7 @@ return (
           <h3 className="text-xl font-semibold text-blue-800 mb-3 text-center">How It Works</h3>
           <ul className="list-disc pl-5 text-blue-700 max-w-3xl mx-auto space-y-2">
             <li>Complete all surveys in a category to mark it as complete</li>
-            <li>After completing a category, you'll need to wait 10 minutes before retrying</li>
+            <li>After completing a category, you&apos;ll need to wait 10 minutes before retrying</li>
             <li>Your completion status is saved automatically</li>
             <li>Rewards are credited to your account immediately after completion</li>
           </ul>
