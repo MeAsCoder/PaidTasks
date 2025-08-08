@@ -1,11 +1,74 @@
-import Layout from '../components/Layout'
-import TaskCard from '../components/TaskCard'
-import Link from 'next/link'
-import { useState, useEffect } from 'react'
-import { useUser } from '../hooks/useUser'
-import { useRouter } from 'next/router'
+import { useState, useEffect } from 'react';
+import Layout from '../components/Layout';
+import Link from 'next/link';
+import { useUser } from '../hooks/useUser';
+import { useRouter } from 'next/router';
+import { 
+  FiCheckCircle, 
+  FiPlay, 
+  FiClock, 
+  FiDollarSign, 
+  FiUsers, 
+  FiLock,
+  FiLoader,
+  FiAlertCircle
+} from 'react-icons/fi';
 
-import { FiCheckCircle, FiPlay, FiClock, FiDollarSign, FiUsers } from 'react-icons/fi'
+// Helper to extract surveyId from task links
+const getSurveyIdFromLink = (link) => {
+  if (link.startsWith('/surveys/')) {
+    return link.split('/surveys/')[1];
+  }
+  return null;
+};
+
+
+
+// Helper to get completion status from all possible storage keys
+
+
+/*
+const getTaskCompletionStatus = (task) => {
+  if (typeof window === 'undefined') return false;
+  
+  // Check survey-style key first
+  if (task.link.startsWith('/surveys/') || task.link.startsWith('/videos/')) {
+    const pathSegments = task.link.split('/');
+    const taskId = pathSegments[pathSegments.length - 1];
+    const surveyKeyState = JSON.parse(localStorage.getItem(`surveyCategory-${taskId}`) || '{"isCompleted":false}');
+    if (surveyKeyState.isCompleted) return true;
+  }
+  
+  // Check task-style key as fallback
+  const taskKeyState = JSON.parse(localStorage.getItem(`task-${task.id}`) || '{"isCompleted":false}');
+  return taskKeyState.isCompleted;
+};
+
+*/
+
+const getTaskCompletionStatus = (task) => {
+  if (typeof window === 'undefined') return false;
+  
+  // Check survey-style key first
+  if (task.link.startsWith('/surveys/') || task.link.startsWith('/videos/')) {
+    const pathSegments = task.link.split('/');
+    const taskId = pathSegments[pathSegments.length - 1];
+    const surveyKeyState = JSON.parse(localStorage.getItem(`surveyCategory-${taskId}`) || '{"isCompleted":false,"cooldownEnd":null}');
+    
+    // If cooldown has expired, consider task not completed
+    if (surveyKeyState.cooldownEnd && Date.now() >= surveyKeyState.cooldownEnd) {
+      return false;
+    }
+    return surveyKeyState.isCompleted;
+  }
+  
+  // Check task-style key as fallback
+  const taskKeyState = JSON.parse(localStorage.getItem(`task-${task.id}`) || '{"isCompleted":false}');
+  return taskKeyState.isCompleted;
+};
+
+
+
 
 
 const taskCategories = [
@@ -16,7 +79,7 @@ const taskCategories = [
       { 
         id: 101, 
         title: "Consumer Preferences Survey", 
-        reward: 0.50, 
+        reward: 5000, 
         time: "5 mins", 
         completed: 1200,
         link: "/surveys/consumer-preferences"
@@ -24,9 +87,9 @@ const taskCategories = [
       { 
         id: 102, 
         title: "Tech Usage Questionnaire", 
-        reward: 1.20, 
+        reward: 0, 
         time: "8 mins", 
-        completed: 850,
+        completed: 8500,
         link: "/surveys/tech-usage"
       },
       { 
@@ -34,7 +97,7 @@ const taskCategories = [
         title: "Social Media Habits Survey", 
         reward: 0.80, 
         time: "6 mins", 
-        completed: 950,
+        completed: 6500,
         link: "/surveys/social-media"
       },
       { 
@@ -42,7 +105,7 @@ const taskCategories = [
         title: "Shopping Behavior Study", 
         reward: 1.50, 
         time: "10 mins", 
-        completed: 620,
+        completed: 2500,
         link: "/surveys/shopping-behavior"
       }
     ]
@@ -54,7 +117,7 @@ const taskCategories = [
       { 
         id: 201, 
         title: "Watch Product Demo", 
-        reward: 0.30, 
+        reward: 3500, 
         time: "2 mins", 
         completed: 3200,
         link: "/videos/product-demo"
@@ -62,7 +125,7 @@ const taskCategories = [
       { 
         id: 202, 
         title: "View Advertisement", 
-        reward: 0.75, 
+        reward: 3600, 
         time: "4 mins", 
         completed: 1500,
         link: "/videos/advertisement"
@@ -70,7 +133,7 @@ const taskCategories = [
       { 
         id: 203, 
         title: "Educational Content", 
-        reward: 0.50, 
+        reward: 6280, 
         time: "3 mins", 
         completed: 2100,
         link: "/videos/educational"
@@ -78,7 +141,7 @@ const taskCategories = [
       { 
         id: 204, 
         title: "Brand Awareness Video", 
-        reward: 0.60, 
+        reward: 9500, 
         time: "2.5 mins", 
         completed: 1800,
         link: "/videos/brand-awareness"
@@ -92,7 +155,7 @@ const taskCategories = [
       { 
         id: 301, 
         title: "App Beta Testing", 
-        reward: 5.00, 
+        reward: 8900, 
         time: "15 mins", 
         completed: 420,
         link: "/testing/app-beta"
@@ -100,7 +163,7 @@ const taskCategories = [
       { 
         id: 302, 
         title: "Physical Product Review", 
-        reward: 8.00, 
+        reward: 8100.00, 
         time: "Varies", 
         completed: 210,
         link: "/testing/physical-product"
@@ -108,7 +171,7 @@ const taskCategories = [
       { 
         id: 303, 
         title: "Website Usability Test", 
-        reward: 4.50, 
+        reward: 4500, 
         time: "12 mins", 
         completed: 380,
         link: "/testing/website-usability"
@@ -116,7 +179,7 @@ const taskCategories = [
       { 
         id: 304, 
         title: "Service Experience Review", 
-        reward: 6.00, 
+        reward: 6000.00, 
         time: "20 mins", 
         completed: 290,
         link: "/testing/service-experience"
@@ -130,7 +193,7 @@ const taskCategories = [
       { 
         id: 401, 
         title: "Image Tagging", 
-        reward: 0.10, 
+        reward: 7820, 
         time: "1 min", 
         completed: 4500,
         link: "/microtasks/image-tagging"
@@ -138,7 +201,7 @@ const taskCategories = [
       { 
         id: 402, 
         title: "Data Verification", 
-        reward: 0.15, 
+        reward: 3500, 
         time: "1.5 mins", 
         completed: 3800,
         link: "/microtasks/data-verification"
@@ -146,7 +209,7 @@ const taskCategories = [
       { 
         id: 403, 
         title: "Short Translation", 
-        reward: 0.25, 
+        reward: 7800, 
         time: "2 mins", 
         completed: 2700,
         link: "/microtasks/translation"
@@ -154,141 +217,357 @@ const taskCategories = [
       { 
         id: 404, 
         title: "Quick Poll", 
-        reward: 0.05, 
+        reward: 4500, 
         time: "30 secs", 
         completed: 6800,
         link: "/microtasks/quick-poll"
       }
     ]
   }
-]
+];
 
 export default function Tasks() {
-  const [taskStates, setTaskStates] = useState({})
-  const [categoryStates, setCategoryStates] = useState({})
-  const [isClient, setIsClient] = useState(false)
-  const { user, loading } = useUser()
-  const router = useRouter()
+  const [categoryStates, setCategoryStates] = useState({});
+  const [taskStates, setTaskStates] = useState({});
+  const [isClient, setIsClient] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const { user, loading: userLoading } = useUser();
+  const router = useRouter();
 
+  // Load all states from localStorage
+
+
+  /*
   useEffect(() => {
-    setIsClient(true)
+    setIsClient(true);
 
-    // Only run client-side code
-    if (typeof window !== 'undefined') {
-      // Redirect if not authenticated
-      if (!loading && !user) {
-        router.push('auth/login')
-        return
-      }
+    const loadStates = () => {
+      try {
+        setLoading(true);
+        
+        if (typeof window !== 'undefined') {
+          // Load task states
+          const loadedTaskStates = {};
+          taskCategories.forEach(category => {
+            category.tasks.forEach(task => {
+              // Use surveyId from link for surveys, task.id for others
+              const storageKey = task.link.startsWith('/surveys/') 
+                ? `surveyCategory-${getSurveyIdFromLink(task.link)}`
+                : `task-${task.id}`;
+              
+              const savedState = JSON.parse(
+                localStorage.getItem(storageKey) || 'null'
+              ) || {
+                isCompleted: false,
+                cooldownEnd: null
+              };
+              loadedTaskStates[task.id] = savedState;
+            });
+          });
+          setTaskStates(loadedTaskStates);
 
-      // Only load data if user is authenticated
-      if (user) {
-        const savedTaskStates = JSON.parse(localStorage.getItem('taskStates')) || {}
-        const savedCategoryStates = JSON.parse(localStorage.getItem('categoryStates')) || {}
-        setTaskStates(savedTaskStates)
-        setCategoryStates(savedCategoryStates)
+          // Load category states using numeric IDs
+          const loadedCategoryStates = {};
+          taskCategories.forEach(category => {
+            const savedState = JSON.parse(
+              localStorage.getItem(`category-${category.id}`) || 'null'
+            ) || {
+              isCompleted: false,
+              cooldownEnd: null
+            };
+            loadedCategoryStates[category.id] = savedState;
+          });
+          setCategoryStates(loadedCategoryStates);
+        }
+      } catch (err) {
+        console.error('Failed to load task states:', err);
+        setError('Failed to load your task progress. Please refresh the page.');
+      } finally {
+        setLoading(false);
       }
+    };
+
+    if (!userLoading && user) {
+      loadStates();
     }
-  }, [user, loading, router])
+  }, [user, userLoading]);
 
-  // Show loading state while checking auth
-  if (!isClient || loading) {
-    return (
-      <Layout title="Loading...">
-        <div className="flex justify-center items-center min-h-screen">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-        </div>
-      </Layout>
-    )
-  }
+  */
 
-  // If not authenticated (fallback, though useEffect should handle redirect)
-  if (!user) {
-    return (
-      <Layout title="Access Denied">
-        <div className="flex justify-center items-center min-h-screen">
-          <p>Redirecting to login...</p>
-        </div>
-      </Layout>
-    )
+
+// Load all states from localStorage
+  useEffect(() => {
+    setIsClient(true);
+
+   // Updated loadStates function in the useEffect
+const loadStates = () => {
+  try {
+    setLoading(true);
+    
+    if (typeof window !== 'undefined') {
+      // Load task states with cooldown check
+      const loadedTaskStates = {};
+      taskCategories.forEach(category => {
+        category.tasks.forEach(task => {
+          // For surveys and videos, check both completion and cooldown
+          if (task.link.startsWith('/surveys/') || task.link.startsWith('/videos/')) {
+            const pathSegments = task.link.split('/');
+            const taskId = pathSegments[pathSegments.length - 1];
+            const savedState = JSON.parse(
+              localStorage.getItem(`surveyCategory-${taskId}`) || 'null'
+            ) || {
+              isCompleted: false,
+              cooldownEnd: null
+            };
+            
+            // If cooldown has expired, mark as not completed
+            loadedTaskStates[task.id] = {
+              isCompleted: savedState.cooldownEnd && Date.now() < savedState.cooldownEnd 
+                ? savedState.isCompleted 
+                : false,
+              cooldownEnd: savedState.cooldownEnd
+            };
+          } else {
+            // For other tasks, just check completion
+            loadedTaskStates[task.id] = {
+              isCompleted: getTaskCompletionStatus(task),
+              cooldownEnd: null
+            };
+          }
+        });
+      });
+      setTaskStates(loadedTaskStates);
+
+      // Load category states
+      const loadedCategoryStates = {};
+      taskCategories.forEach(category => {
+        const savedState = JSON.parse(
+          localStorage.getItem(`category-${category.id}`) || 'null'
+        ) || {
+          isCompleted: false,
+          cooldownEnd: null
+        };
+        loadedCategoryStates[category.id] = savedState;
+      });
+      setCategoryStates(loadedCategoryStates);
+    }
+  } catch (err) {
+    console.error('Failed to load task states:', err);
+    setError('Failed to load your task progress. Please refresh the page.');
+  } finally {
+    setLoading(false);
   }
+};
+
+
+
+    if (!userLoading && user) {
+      loadStates();
+    }
+  }, [user, userLoading]);
+
+
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (!userLoading && !user && typeof window !== 'undefined') {
+      router.push('/auth/login');
+    }
+  }, [user, userLoading, router]);
 
   // Check if all tasks in a category are completed
-  const isCategoryComplete = (category) => {
-    return category.tasks.every(task => taskStates[task.id]?.completed)
-  }
-
-  // Get task status
-  const getTaskStatus = (task) => {
-    const state = taskStates[task.id] || {}
-    const isCompleted = state.completed || false
+  const isCategoryComplete = (categoryId) => {
+    const category = taskCategories.find(c => c.id === categoryId);
+    if (!category) return false;
     
-    return { isCompleted }
-  }
+    return category.tasks.every(task => {
+      const taskState = taskStates[task.id] || {};
+      return taskState.isCompleted;
+    });
+  };
 
-  // Get category status (including cooldown)
-  const getCategoryStatus = (category) => {
-    const state = categoryStates[category.id] || {}
-    const now = Date.now()
-    const isOnCooldown = state.cooldownEnd > now
-    const cooldownRemaining = Math.max(0, Math.ceil((state.cooldownEnd - now) / 60000))
-    
-    return {
-      isComplete: isCategoryComplete(category),
-      isOnCooldown,
-      cooldownRemaining
-    }
-  }
+  // Check cooldown status for a category
+  const isCategoryOnCooldown = (categoryId) => {
+    const state = categoryStates[categoryId] || {};
+    if (!state.cooldownEnd) return false;
+    return Date.now() < state.cooldownEnd;
+  };
+
+  // Get remaining cooldown time in minutes
+  const getCooldownRemaining = (categoryId) => {
+    const state = categoryStates[categoryId] || {};
+    if (!state.cooldownEnd) return 0;
+    return Math.max(0, Math.ceil((state.cooldownEnd - Date.now()) / (1000 * 60)));
+  };
 
   // Format time display
   const formatTime = (minutes) => {
-    if (minutes <= 0) return 'now'
-    return minutes > 1 ? `${minutes} minutes` : '1 minute'
+    if (minutes <= 0) return 'now';
+    if (minutes < 60) return `${minutes} min${minutes !== 1 ? 's' : ''}`;
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return `${hours}h ${mins}m`;
+  };
+
+  // Update category state when tasks are completed
+
+  /*
+  useEffect(() => {
+    if (loading) return;
+
+    const updatedStates = { ...categoryStates };
+    let hasChanges = false;
+
+    taskCategories.forEach(category => {
+      if (isCategoryComplete(category.id)) {
+        const currentState = categoryStates[category.id] || {};
+        if (!currentState.isCompleted) {
+          updatedStates[category.id] = {
+            isCompleted: true,
+            cooldownEnd: Date.now() + (5 * 60 * 60 * 1000) // 5 hours from now
+          };
+          hasChanges = true;
+        }
+      }
+    });
+
+    if (hasChanges) {
+      setCategoryStates(updatedStates);
+      // Persist to localStorage
+      Object.entries(updatedStates).forEach(([categoryId, state]) => {
+        localStorage.setItem(`category-${categoryId}`, JSON.stringify(state));
+      });
+    }
+  }, [taskStates, loading]);
+*/
+
+ // Update category state when tasks are completed
+  useEffect(() => {
+    if (loading) return;
+
+    const updatedStates = { ...categoryStates };
+    let hasChanges = false;
+
+    taskCategories.forEach(category => {
+      if (isCategoryComplete(category.id)) {
+        const currentState = categoryStates[category.id] || {};
+        if (!currentState.isCompleted) {
+          updatedStates[category.id] = {
+            isCompleted: true,
+            cooldownEnd: Date.now() + (5 * 60 * 60 * 1000) // 5 hours
+          };
+          hasChanges = true;
+        }
+      }
+    });
+
+    if (hasChanges) {
+      setCategoryStates(updatedStates);
+      Object.entries(updatedStates).forEach(([categoryId, state]) => {
+        localStorage.setItem(`category-${categoryId}`, JSON.stringify(state));
+      });
+    }
+  }, [taskStates, loading]);
+
+
+  // Handle cooldown countdown
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    if (loading) return;
+
+    const hasActiveCooldown = Object.values(categoryStates).some(state => 
+      state.cooldownEnd && state.cooldownEnd > now
+    );
+
+    if (hasActiveCooldown) {
+      const timer = setInterval(() => setNow(Date.now()), 60000); // Update every minute
+      return () => clearInterval(timer);
+    }
+  }, [categoryStates, loading, now]);
+
+  // Loading state
+  if (!isClient || userLoading || loading) {
+    return (
+      <Layout title="Loading Tasks...">
+        <div className="flex flex-col items-center justify-center min-h-screen py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mb-4">
+            <FiLoader className="w-full h-full text-blue-500" />
+          </div>
+          <p className="text-gray-600">Loading your tasks...</p>
+        </div>
+      </Layout>
+    );
   }
-return (
+
+  // Error state
+  if (error) {
+    return (
+      <Layout title="Error Loading Tasks">
+        <div className="flex flex-col items-center justify-center min-h-screen py-12 px-4">
+          <div className="bg-red-100 rounded-full p-4 mb-4">
+            <FiAlertCircle className="text-red-500 text-2xl" />
+          </div>
+          <h2 className="text-xl font-semibold text-gray-800 mb-2">Oops! Something went wrong</h2>
+          <p className="text-gray-600 mb-6 text-center max-w-md">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
+          >
+            Refresh Page
+          </button>
+        </div>
+      </Layout>
+    );
+  }
+
+  // Main content
+  return (
     <Layout title="Available Tasks">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 mb-3">Available Tasks</h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Complete all surveys in a category to earn rewards.
+            Complete tasks to earn rewards. Categories have a 5-hour cooldown after completion.
           </p>
         </div>
-        
+
         {taskCategories.map(category => {
-          const { isComplete, isOnCooldown, cooldownRemaining } = getCategoryStatus(category)
-          
+          const isComplete = isCategoryComplete(category.id);
+          const isOnCooldown = isCategoryOnCooldown(category.id);
+          const cooldownRemaining = getCooldownRemaining(category.id);
+
           return (
             <div key={category.id} className="mb-16">
               <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center">
-                  <span className="text-3xl mr-3">{category.icon}</span>
-                  <h2 className="text-2xl font-semibold text-gray-800">
-                    {category.name} Tasks
-                  </h2>
-                </div>
+                <h2 className="text-2xl font-semibold text-gray-800">
+                  {category.name}
+                </h2>
                 {isComplete && (
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                    Category Completed
+                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                    isOnCooldown ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'
+                  }`}>
+                    {isOnCooldown ? 'On Cooldown' : 'Completed'}
                   </span>
                 )}
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {category.tasks.map(task => {
-                  const { isCompleted } = getTaskStatus(task)
-                  
+                  const taskState = taskStates[task.id] || {};
+                  const taskCompleted = taskState.isCompleted;
+                  const disabled = isComplete || isOnCooldown;
+
                   return (
                     <div 
                       key={task.id}
                       className={`bg-white rounded-xl shadow-md overflow-hidden border ${
-                        isOnCooldown ? 'border-gray-200' : 'border-gray-100 hover:shadow-lg'
+                        disabled ? 'border-gray-200 opacity-90' : 'border-gray-100 hover:shadow-lg'
                       } transition-all duration-300`}
                     >
                       <div className="p-6">
                         <div className="flex justify-between items-start mb-4">
                           <h3 className="text-lg font-semibold text-gray-900">{task.title}</h3>
-                          {isCompleted && (
+                          {taskCompleted && (
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                               Completed
                             </span>
@@ -309,41 +588,41 @@ return (
                           <FiUsers className="mr-1.5" />
                           <span>{task.completed.toLocaleString()} completed</span>
                         </div>
-                        
+
                         {isOnCooldown && (
                           <div className="mb-4 bg-yellow-50 p-3 rounded-md text-center">
                             <p className="text-sm text-yellow-700">
                               <FiClock className="inline mr-1" />
-                              Retry in {formatTime(cooldownRemaining)}
+                              Available in {formatTime(cooldownRemaining)}
                             </p>
                           </div>
                         )}
-                        
+
                         <Link 
-                          href={!isOnCooldown ? task.link : '#'} 
+                          href={!disabled ? task.link : '#'} 
                           passHref
                           legacyBehavior
                         >
                           <a>
                             <button
                               className={`w-full flex items-center justify-center px-4 py-2 rounded-md text-sm font-medium ${
-                                isOnCooldown
+                                disabled
                                   ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
-                                  : isComplete
-                                    ? 'bg-green-100 text-green-800 cursor-not-allowed'
+                                  : taskCompleted
+                                    ? 'bg-green-100 text-green-800'
                                     : 'bg-blue-600 text-white hover:bg-blue-700'
                               }`}
-                              disabled={isOnCooldown || isComplete}
+                              disabled={disabled}
                             >
-                              {isOnCooldown ? (
+                              {disabled ? (
                                 <>
-                                  <FiClock className="mr-2" />
-                                  On Cooldown
+                                  <FiLock className="mr-2" />
+                                  {isComplete ? 'Category Completed' : 'On Cooldown'}
                                 </>
-                              ) : isComplete ? (
+                              ) : taskCompleted ? (
                                 <>
                                   <FiCheckCircle className="mr-2" />
-                                  Task Complete
+                                  Completed
                                 </>
                               ) : (
                                 <>
@@ -356,23 +635,23 @@ return (
                         </Link>
                       </div>
                     </div>
-                  )
+                  );
                 })}
               </div>
             </div>
-          )
+          );
         })}
-        
+
         <div className="mt-12 bg-blue-50 rounded-xl p-6">
           <h3 className="text-xl font-semibold text-blue-800 mb-3 text-center">How It Works</h3>
           <ul className="list-disc pl-5 text-blue-700 max-w-3xl mx-auto space-y-2">
-            <li>Complete all surveys in a category to mark it as complete</li>
-            <li>After completing a category, you&apos;ll need to wait 10 minutes before retrying</li>
-            <li>Your completion status is saved automatically</li>
-            <li>Rewards are credited to your account immediately after completion</li>
+            <li>Complete all tasks in a category to mark it as complete</li>
+            <li>Each category has a 5-hour cooldown period after completion</li>
+            <li>During cooldown, all tasks in that category will be disabled</li>
+            <li>Your progress is saved automatically between sessions</li>
           </ul>
         </div>
       </div>
     </Layout>
-  )
+  );
 }

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
 import Layout from '../../components/Layout'
-import { FiCheck, FiClock, FiLock } from 'react-icons/fi'
+import { FiCheck, FiClock, FiLock,FiArrowLeft, FiArrowRight } from 'react-icons/fi'
 
 
 const SurveyPage = () => {
@@ -13,6 +13,7 @@ const SurveyPage = () => {
 const allSurveys = {
     'consumer-preferences': {
       title: "Consumer Preferences Survey",
+      reward: 100,
       questions: [
         {
           id: 1,
@@ -578,184 +579,293 @@ const allSurveys = {
   }
 
 
+// Get current survey or default
+  const currentSurvey = allSurveys[surveyId] || allSurveys['consumer-preferences'];
+  const surveyQuestions = currentSurvey.questions;
 
-
-  // Get the current survey based on surveyId
-  const currentSurvey = allSurveys[surveyId] || allSurveys['consumer-preferences']
-  const surveyQuestions = currentSurvey.questions
-
-  const [currentQuestion, setCurrentQuestion] = useState(0)
-  const [answers, setAnswers] = useState({})
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [canProceed, setCanProceed] = useState(false)
-  const [timeLeft, setTimeLeft] = useState(60) // 1 minute delay
-  const [isCompleted, setIsCompleted] = useState(false)
-
+  // Component state
+  const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [answers, setAnswers] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [canProceed, setCanProceed] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(15); // 15 seconds per question minimum
+  const [validationError, setValidationError] = useState('');
   const [categoryState, setCategoryState] = useState({
-        isCompleted: false,
-        coolDownEnd : null
-  })
-  const [cooldownEnd, setCooldownEnd] = useState(null)
+    isCompleted: false,
+    cooldownEnd: null
+  });
 
-
-
+  // Load saved state from localStorage
   useEffect(() => {
     const savedState = JSON.parse(localStorage.getItem(`surveyCategory-${surveyId}`)) || {
       isCompleted: false,
       cooldownEnd: null
-    }
-    setCategoryState(savedState)
-  }, [surveyId])
+    };
+    setCategoryState(savedState);
+  }, [surveyId]);
 
-  // Handle question delay timer
+  // Handle question timer (minimum time per question)
   useEffect(() => {
-    if (categoryState.isCompleted) return
+    if (categoryState.isCompleted) return;
     
-    setCanProceed(false)
-    setTimeLeft(60)
+    setCanProceed(false);
+    setTimeLeft(15);
+    setValidationError('');
     
     const timer = setInterval(() => {
       setTimeLeft(prev => {
         if (prev <= 1) {
-          clearInterval(timer)
-          setCanProceed(true)
-          return 0
+          clearInterval(timer);
+          setCanProceed(true);
+          return 0;
         }
-        return prev - 1
-      })
-    }, 1000)
+        return prev - 1;
+      });
+    }, 1000);
 
-    return () => clearInterval(timer)
-  }, [currentQuestion, categoryState.isCompleted])
+    return () => clearInterval(timer);
+  }, [currentQuestion, categoryState.isCompleted]);
 
   // Handle cooldown timer
   useEffect(() => {
-    if (!categoryState.cooldownEnd) return
+    if (!categoryState.cooldownEnd) return;
     
     const timer = setInterval(() => {
       if (Date.now() >= categoryState.cooldownEnd) {
         const newState = {
           isCompleted: false,
           cooldownEnd: null
-        }
-        setCategoryState(newState)
-        localStorage.setItem(`surveyCategory-${surveyId}`, JSON.stringify(newState))
+        };
+        setCategoryState(newState);
+        localStorage.setItem(`surveyCategory-${surveyId}`, JSON.stringify(newState));
       }
-    }, 1000)
+    }, 1000);
 
-    return () => clearInterval(timer)
-  }, [categoryState.cooldownEnd, surveyId])
+    return () => clearInterval(timer);
+  }, [categoryState.cooldownEnd, surveyId]);
 
-
-  // Check localStorage for existing completion state
-  useEffect(() => {
-    const surveyState = JSON.parse(localStorage.getItem(`surveyState-${surveyId}`)) || {}
-    setIsCompleted(surveyState.isCompleted || false)
-    setCooldownEnd(surveyState.cooldownEnd || null)
-  }, [surveyId])
-
-  // Handle question delay timer
-  useEffect(() => {
-    if (isCompleted) return
-    
-    setCanProceed(false)
-    setTimeLeft(0)
-    
-    const timer = setInterval(() => {
-      setTimeLeft(prev => {
-        if (prev <= 1) {
-          clearInterval(timer)
-          setCanProceed(true)
-          return 0
-        }
-        return prev - 1
-      })
-    }, 1000)
-
-    return () => clearInterval(timer)
-  }, [currentQuestion, isCompleted])
-
-  // Handle cooldown timer
-  useEffect(() => {
-    if (!cooldownEnd) return
-    
-    const timer = setInterval(() => {
-      if (Date.now() >= cooldownEnd) {
-        setCooldownEnd(null)
-        localStorage.setItem(`surveyState-${surveyId}`, JSON.stringify({
-          isCompleted: false,
-          cooldownEnd: null
-        }))
-      }
-    }, 1000)
-
-    return () => clearInterval(timer)
-  }, [cooldownEnd, surveyId])
-
-
-
-
- 
-
+  // Handle answer selection
   const handleAnswer = (questionId, answer) => {
     setAnswers(prev => ({
       ...prev,
       [questionId]: answer
-    }))
-  }
+    }));
+    setValidationError('');
+  };
 
-
-  const handleNext = () => {
-    if (currentQuestion < surveyQuestions.length - 1) {
-      setCurrentQuestion(prev => prev + 1)
+  // Validate current question before proceeding
+  const validateCurrentQuestion = () => {
+    const currentQ = surveyQuestions[currentQuestion];
+    
+    if (currentQ.required) {
+      if (!answers[currentQ.id]) {
+        setValidationError('This question is required');
+        return false;
+      }
+      
+      if (currentQ.type === 'checkbox' && currentQ.maxSelections) {
+        if (answers[currentQ.id]?.length > currentQ.maxSelections) {
+          setValidationError(`Maximum ${currentQ.maxSelections} selections allowed`);
+          return false;
+        }
+      }
     }
-  }
+    
+    return true;
+  };
 
-  
+  // Navigation functions
+  const handleNext = () => {
+    if (!validateCurrentQuestion()) return;
+    if (currentQuestion < surveyQuestions.length - 1) {
+      setCurrentQuestion(prev => prev + 1);
+    }
+  };
 
   const handlePrevious = () => {
     if (currentQuestion > 0) {
-      setCurrentQuestion(prev => prev - 1)
+      setCurrentQuestion(prev => prev - 1);
     }
-  }
+  };
 
+  // Submit survey and mark category as completed
   const handleSubmit = async () => {
-    setIsSubmitting(true)
-    // Simulate API submission
-    await new Promise(resolve => setTimeout(resolve, 1500))
-
-// Set completion state with 10 minute cooldown
-    const newCooldownEnd = Date.now() + (10 * 60 * 1000)
-    setCooldownEnd(newCooldownEnd)
-    setIsCompleted(true)
+    if (!validateCurrentQuestion()) return;
     
-    // Save to localStorage
-    localStorage.setItem(`surveyState-${surveyId}`, JSON.stringify({
-      isCompleted: true,
-      cooldownEnd: newCooldownEnd
-    }))
+    setIsSubmitting(true);
+    
+    try {
+      // Simulate API submission
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Set completion state with 5 hour cooldown
+      const cooldownHours = 5;
+      const newCooldownEnd = Date.now() + (cooldownHours * 60 * 60 * 1000);
+      
+      const newState = {
+        isCompleted: true,
+        cooldownEnd: newCooldownEnd
+      };
+      
+      setCategoryState(newState);
+      localStorage.setItem(`surveyCategory-${surveyId}`, JSON.stringify(newState));
+      
+      // Redirect to completion page with reward info
+      router.push({
+        pathname: '/survey-complete',
+        query: { 
+          reward: currentSurvey.reward,
+          surveyName: currentSurvey.title 
+        }
+      });
+    } catch (error) {
+      console.error('Submission error:', error);
+      setIsSubmitting(false);
+    }
+  };
 
-    router.push('/survey-complete')
-  }
-
-  const progress = ((currentQuestion + 1) / surveyQuestions.length) * 100
-
-
-    // Format time display
+  // Helper functions
   const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60)
-    const secs = seconds % 60
-    return `${mins}:${secs < 10 ? '0' : ''}${secs}`
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+  };
+
+  const progress = ((currentQuestion + 1) / surveyQuestions.length) * 100;
+
+  // Render question input based on type
+  const renderQuestionInput = (question) => {
+    switch (question.type) {
+      case 'radio':
+        return (
+          <div className="space-y-3">
+            {question.options.map((option, i) => (
+              <label key={i} className="flex items-center space-x-3 cursor-pointer">
+                <input
+                  type="radio"
+                  name={`q-${question.id}`}
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500"
+                  checked={answers[question.id] === option}
+                  onChange={() => handleAnswer(question.id, option)}
+                />
+                <span className="text-gray-700">{option}</span>
+              </label>
+            ))}
+          </div>
+        );
+        
+      case 'checkbox':
+        return (
+          <div className="space-y-3">
+            {question.options.map((option, i) => (
+              <label key={i} className="flex items-center space-x-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 rounded"
+                  checked={answers[question.id]?.includes(option) || false}
+                  onChange={() => {
+                    const currentAnswers = answers[question.id] || [];
+                    const newAnswers = currentAnswers.includes(option)
+                      ? currentAnswers.filter(a => a !== option)
+                      : [...currentAnswers, option];
+                    handleAnswer(question.id, newAnswers);
+                  }}
+                />
+                <span className="text-gray-700">{option}</span>
+              </label>
+            ))}
+          </div>
+        );
+        
+      case 'scale':
+        return (
+          <div className="space-y-4">
+            <div className="flex justify-between">
+              <span>{question.labels?.[0] || 'Low'}</span>
+              <span>{question.labels?.[1] || 'High'}</span>
+            </div>
+            <div className="flex justify-between space-x-4">
+              {question.scale.map(num => (
+                <label key={num} className="flex flex-col items-center">
+                  <span className="mb-1">{num}</span>
+                  <input
+                    type="radio"
+                    name={`q-${question.id}`}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500"
+                    checked={answers[question.id] === num.toString()}
+                    onChange={() => handleAnswer(question.id, num.toString())}
+                  />
+                </label>
+              ))}
+            </div>
+          </div>
+        );
+        
+      case 'text':
+        return (
+          <textarea
+            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            rows={4}
+            placeholder={question.placeholder || "Type your answer here..."}
+            value={answers[question.id] || ''}
+            onChange={(e) => handleAnswer(question.id, e.target.value)}
+          />
+        );
+        
+      default:
+        return null;
+    }
+  };
+
+  // Render completed state
+  if (categoryState.isCompleted && categoryState.cooldownEnd) {
+    const remainingHours = Math.ceil((categoryState.cooldownEnd - Date.now()) / (60 * 60 * 1000));
+    
+    return (
+      <Layout title="Survey Completed">
+        <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-md overflow-hidden p-6 my-8 text-center">
+          <div className="mb-6 text-green-500">
+            <FiCheck className="inline-block text-5xl" />
+          </div>
+          <h2 className="text-2xl font-bold mb-2">Survey Completed!</h2>
+          <p className="text-lg text-blue-600 mb-2">
+            +{currentSurvey.reward} points earned!
+          </p>
+          <p className="text-gray-600 mb-6">
+            Thank you for completing the {currentSurvey.title}.
+          </p>
+          <div className="bg-blue-50 p-4 rounded-lg inline-flex items-center">
+            <FiClock className="mr-2 text-blue-500" />
+            <span className="text-blue-700">
+              You can take this survey again in {remainingHours} hour{remainingHours !== 1 ? 's' : ''}
+            </span>
+          </div>
+          <button
+            onClick={() => router.push('/tasks')}
+            className="mt-6 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition flex items-center mx-auto"
+          >
+            Back to Available Tasks
+          </button>
+        </div>
+      </Layout>
+    );
   }
 
-  if (isCompleted || cooldownEnd) {
-    const remainingCooldown = Math.max(0, Math.ceil((cooldownEnd - Date.now()) / 60000))
-  }
-
-
+  // Main survey UI
   return (
     <Layout title={currentSurvey.title}>
       <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-md overflow-hidden p-6 my-8">
+        {/* Survey Header */}
+        <div className="mb-6 pb-6 border-b">
+          <h1 className="text-2xl font-bold text-gray-800">{currentSurvey.title}</h1>
+          <div className="flex justify-between items-center mt-2">
+            <p className="text-gray-600">{currentSurvey.description}</p>
+            <div className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
+              Reward: Ksh {currentSurvey.reward}
+            </div>
+          </div>
+        </div>
+
         {/* Progress Bar */}
         <div className="mb-8">
           <div className="flex justify-between mb-2">
@@ -778,79 +888,17 @@ const allSurveys = {
         <div className="mb-8">
           <h3 className="text-xl font-semibold mb-6 text-gray-800">
             {surveyQuestions[currentQuestion].question}
+            {surveyQuestions[currentQuestion].required && (
+              <span className="text-red-500 ml-1">*</span>
+            )}
           </h3>
 
           {/* Question Input */}
-          {surveyQuestions[currentQuestion].type === 'radio' && (
-            <div className="space-y-3">
-              {surveyQuestions[currentQuestion].options.map((option, i) => (
-                <label key={i} className="flex items-center space-x-3 cursor-pointer">
-                  <input
-                    type="radio"
-                    name={`q-${surveyQuestions[currentQuestion].id}`}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500"
-                    checked={answers[surveyQuestions[currentQuestion].id] === option}
-                    onChange={() => handleAnswer(surveyQuestions[currentQuestion].id, option)}
-                  />
-                  <span className="text-gray-700">{option}</span>
-                </label>
-              ))}
-            </div>
-          )}
+          {renderQuestionInput(surveyQuestions[currentQuestion])}
 
-          {surveyQuestions[currentQuestion].type === 'checkbox' && (
-            <div className="space-y-3">
-              {surveyQuestions[currentQuestion].options.map((option, i) => (
-                <label key={i} className="flex items-center space-x-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 rounded"
-                    checked={answers[surveyQuestions[currentQuestion].id]?.includes(option) || false}
-                    onChange={() => {
-                      const currentAnswers = answers[surveyQuestions[currentQuestion].id] || []
-                      const newAnswers = currentAnswers.includes(option)
-                        ? currentAnswers.filter(a => a !== option)
-                        : [...currentAnswers, option]
-                      handleAnswer(surveyQuestions[currentQuestion].id, newAnswers)
-                    }}
-                  />
-                  <span className="text-gray-700">{option}</span>
-                </label>
-              ))}
-            </div>
-          )}
-
-          {surveyQuestions[currentQuestion].type === 'scale' && (
-            <div className="space-y-4">
-              <div className="flex justify-between">
-                <span>{surveyQuestions[currentQuestion].labels?.[0] || 'Low'}</span>
-                <span>{surveyQuestions[currentQuestion].labels?.[1] || 'High'}</span>
-              </div>
-              <div className="flex justify-between space-x-4">
-                {surveyQuestions[currentQuestion].scale.map(num => (
-                  <label key={num} className="flex flex-col items-center">
-                    <span className="mb-1">{num}</span>
-                    <input
-                      type="radio"
-                      name={`q-${surveyQuestions[currentQuestion].id}`}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500"
-                      checked={answers[surveyQuestions[currentQuestion].id] === num.toString()}
-                      onChange={() => handleAnswer(surveyQuestions[currentQuestion].id, num.toString())}
-                    />
-                  </label>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {surveyQuestions[currentQuestion].type === 'text' && (
-            <textarea
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-              rows={4}
-              placeholder={surveyQuestions[currentQuestion].placeholder}
-              value={answers[surveyQuestions[currentQuestion].id] || ''}
-              onChange={(e) => handleAnswer(surveyQuestions[currentQuestion].id, e.target.value)}
-            />
+          {/* Validation Error */}
+          {validationError && (
+            <p className="mt-2 text-sm text-red-600">{validationError}</p>
           )}
         </div>
 
@@ -859,31 +907,43 @@ const allSurveys = {
           <button
             onClick={handlePrevious}
             disabled={currentQuestion === 0}
-            className={`px-4 py-2 rounded-md ${currentQuestion === 0 ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+            className={`px-4 py-2 rounded-md flex items-center ${
+              currentQuestion === 0 
+                ? 'bg-gray-200 text-gray-500 cursor-not-allowed' 
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
           >
-            Previous
+            <FiArrowLeft className="mr-1" /> Previous
           </button>
 
           {!canProceed && (
             <div className="flex items-center text-orange-600">
               <FiClock className="mr-2" />
-              Submitting question in {formatTime(timeLeft)}
+              Next question in {formatTime(timeLeft)}
             </div>
           )}
 
           {currentQuestion < surveyQuestions.length - 1 ? (
             <button
               onClick={handleNext}
-              disabled={!canProceed || !answers[surveyQuestions[currentQuestion].id]}
-              className={`px-4 py-2 rounded-md flex items-center ${!canProceed || !answers[surveyQuestions[currentQuestion].id] ? 'bg-blue-300 text-white cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
+              disabled={!canProceed}
+              className={`px-4 py-2 rounded-md flex items-center ${
+                !canProceed 
+                  ? 'bg-blue-300 text-white cursor-not-allowed' 
+                  : 'bg-blue-600 text-white hover:bg-blue-700'
+              }`}
             >
-              Next
+              Next <FiArrowRight className="ml-1" />
             </button>
           ) : (
             <button
               onClick={handleSubmit}
-              disabled={isSubmitting || !answers[surveyQuestions[currentQuestion].id]}
-              className={`px-4 py-2 rounded-md flex items-center ${isSubmitting || !answers[surveyQuestions[currentQuestion].id] ? 'bg-green-300 text-white cursor-not-allowed' : 'bg-green-600 text-white hover:bg-green-700'}`}
+              disabled={isSubmitting}
+              className={`px-4 py-2 rounded-md flex items-center ${
+                isSubmitting 
+                  ? 'bg-green-300 text-white cursor-not-allowed' 
+                  : 'bg-green-600 text-white hover:bg-green-700'
+              }`}
             >
               {isSubmitting ? (
                 <>
@@ -899,7 +959,7 @@ const allSurveys = {
         </div>
       </div>
     </Layout>
-  )
-}
+  );
+};
 
-export default SurveyPage
+export default SurveyPage;
