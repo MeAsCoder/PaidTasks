@@ -154,7 +154,7 @@ const VideoPage = () => {
             +${currentVideo.reward.toFixed(2)} earned!
           </p>
           <p className="text-gray-600 mb-6">
-            Thank you for watching "{currentVideo.title}".
+            Thank you for watching &quot;{currentVideo.title}&quot;.
           </p>
           <div className="bg-blue-50 p-4 rounded-lg inline-flex items-center">
             <FiClock className="mr-2 text-blue-500" />
@@ -219,7 +219,7 @@ const VideoPage = () => {
           <p className="text-blue-600">
             {hasWatched ? (
               <>
-                You've qualified for the reward of ${currentVideo.reward.toFixed(2)}! 
+                You&apos;ve qualified for the reward of ${currentVideo.reward.toFixed(2)}! 
                 Submit to claim your payment.
               </>
             ) : (
