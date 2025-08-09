@@ -581,11 +581,11 @@ const loadStates = () => {
                         
                         <div className="flex items-center text-sm text-gray-500 mb-3">
                           <FiDollarSign className="mr-1.5" />
-                          <span>Ksh{task.reward.toFixed(2)}</span>
+                          <span>Ksh {task.reward.toFixed(2)}</span>
                         </div>
                         
                         <div className="flex items-center text-sm text-gray-500 mb-6">
-                          <FiUsers className="mr-1.5" />
+                          <FiUsers className="mr-1.5" /> 
                           <span>{task.completed.toLocaleString()} completed</span>
                         </div>
 
