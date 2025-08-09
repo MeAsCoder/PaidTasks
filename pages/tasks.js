@@ -87,7 +87,7 @@ const taskCategories = [
       { 
         id: 102, 
         title: "Tech Usage Questionnaire", 
-        reward: 0, 
+        reward: 2300, 
         time: "8 mins", 
         completed: 8500,
         link: "/surveys/tech-usage"
@@ -95,7 +95,7 @@ const taskCategories = [
       { 
         id: 103, 
         title: "Social Media Habits Survey", 
-        reward: 0.80, 
+        reward: 8200, 
         time: "6 mins", 
         completed: 6500,
         link: "/surveys/social-media"
@@ -103,7 +103,7 @@ const taskCategories = [
       { 
         id: 104, 
         title: "Shopping Behavior Study", 
-        reward: 1.50, 
+        reward: 3200, 
         time: "10 mins", 
         completed: 2500,
         link: "/surveys/shopping-behavior"
@@ -581,7 +581,7 @@ const loadStates = () => {
                         
                         <div className="flex items-center text-sm text-gray-500 mb-3">
                           <FiDollarSign className="mr-1.5" />
-                          <span>${task.reward.toFixed(2)}</span>
+                          <span>Ksh{task.reward.toFixed(2)}</span>
                         </div>
                         
                         <div className="flex items-center text-sm text-gray-500 mb-6">
