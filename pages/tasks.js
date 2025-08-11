@@ -11,8 +11,11 @@ import {
   FiUsers, 
   FiLock,
   FiLoader,
-  FiAlertCircle
+  FiAlertCircle,
+  FiAlertTriangle,
+  FiZap
 } from 'react-icons/fi';
+import { getDatabase, ref, get } from 'firebase/database';
 
 // Helper to extract surveyId from task links
 const getSurveyIdFromLink = (link) => {
@@ -21,30 +24,6 @@ const getSurveyIdFromLink = (link) => {
   }
   return null;
 };
-
-
-
-// Helper to get completion status from all possible storage keys
-
-
-/*
-const getTaskCompletionStatus = (task) => {
-  if (typeof window === 'undefined') return false;
-  
-  // Check survey-style key first
-  if (task.link.startsWith('/surveys/') || task.link.startsWith('/videos/')) {
-    const pathSegments = task.link.split('/');
-    const taskId = pathSegments[pathSegments.length - 1];
-    const surveyKeyState = JSON.parse(localStorage.getItem(`surveyCategory-${taskId}`) || '{"isCompleted":false}');
-    if (surveyKeyState.isCompleted) return true;
-  }
-  
-  // Check task-style key as fallback
-  const taskKeyState = JSON.parse(localStorage.getItem(`task-${task.id}`) || '{"isCompleted":false}');
-  return taskKeyState.isCompleted;
-};
-
-*/
 
 const getTaskCompletionStatus = (task) => {
   if (typeof window === 'undefined') return false;
@@ -66,10 +45,6 @@ const getTaskCompletionStatus = (task) => {
   const taskKeyState = JSON.parse(localStorage.getItem(`task-${task.id}`) || '{"isCompleted":false}');
   return taskKeyState.isCompleted;
 };
-
-
-
-
 
 const taskCategories = [
   {
@@ -118,7 +93,7 @@ const taskCategories = [
         id: 201, 
         title: "Watch Product Demo", 
         reward: 3500, 
-        time: "2 mins", 
+        time: "20 mins", 
         completed: 3200,
         link: "/videos/product-demo"
       },
@@ -126,7 +101,7 @@ const taskCategories = [
         id: 202, 
         title: "View Advertisement", 
         reward: 3600, 
-        time: "4 mins", 
+        time: "30 mins", 
         completed: 1500,
         link: "/videos/advertisement"
       },
@@ -134,7 +109,7 @@ const taskCategories = [
         id: 203, 
         title: "Educational Content", 
         reward: 6280, 
-        time: "3 mins", 
+        time: "30 mins", 
         completed: 2100,
         link: "/videos/educational"
       },
@@ -142,7 +117,7 @@ const taskCategories = [
         id: 204, 
         title: "Brand Awareness Video", 
         reward: 9500, 
-        time: "2.5 mins", 
+        time: "25 mins", 
         completed: 1800,
         link: "/videos/brand-awareness"
       }
@@ -226,19 +201,53 @@ const taskCategories = [
   }
 ];
 
+const ActivationModal = ({ onClose, onActivate }) => {
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-xl">
+        <div className="text-center mb-6">
+          <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100 mb-4">
+            <FiAlertTriangle className="h-6 w-6 text-yellow-600" />
+          </div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Account Not Activated</h3>
+          <p className="text-gray-500">
+            You need to activate your account to start earning. Choose an activation plan to get started.
+          </p>
+        </div>
+        <div className="mt-6 flex justify-center space-x-4">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+          >
+            Maybe Later
+          </button>
+          <button
+            type="button"
+            onClick={onActivate}
+            className="px-4 py-2 bg-blue-600 rounded-md text-sm font-medium text-white hover:bg-blue-700 flex items-center"
+          >
+            <FiZap className="mr-2" />
+            Activate Now
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default function Tasks() {
   const [categoryStates, setCategoryStates] = useState({});
   const [taskStates, setTaskStates] = useState({});
   const [isClient, setIsClient] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showActivationModal, setShowActivationModal] = useState(false);
+  const [clickedTask, setClickedTask] = useState(null);
   const { user, loading: userLoading } = useUser();
   const router = useRouter();
 
   // Load all states from localStorage
-
-
-  /*
   useEffect(() => {
     setIsClient(true);
 
@@ -247,27 +256,40 @@ export default function Tasks() {
         setLoading(true);
         
         if (typeof window !== 'undefined') {
-          // Load task states
+          // Load task states with cooldown check
           const loadedTaskStates = {};
           taskCategories.forEach(category => {
             category.tasks.forEach(task => {
-              // Use surveyId from link for surveys, task.id for others
-              const storageKey = task.link.startsWith('/surveys/') 
-                ? `surveyCategory-${getSurveyIdFromLink(task.link)}`
-                : `task-${task.id}`;
-              
-              const savedState = JSON.parse(
-                localStorage.getItem(storageKey) || 'null'
-              ) || {
-                isCompleted: false,
-                cooldownEnd: null
-              };
-              loadedTaskStates[task.id] = savedState;
+              // For surveys and videos, check both completion and cooldown
+              if (task.link.startsWith('/surveys/') || task.link.startsWith('/videos/')) {
+                const pathSegments = task.link.split('/');
+                const taskId = pathSegments[pathSegments.length - 1];
+                const savedState = JSON.parse(
+                  localStorage.getItem(`surveyCategory-${taskId}`) || 'null'
+                ) || {
+                  isCompleted: false,
+                  cooldownEnd: null
+                };
+                
+                // If cooldown has expired, mark as not completed
+                loadedTaskStates[task.id] = {
+                  isCompleted: savedState.cooldownEnd && Date.now() < savedState.cooldownEnd 
+                    ? savedState.isCompleted 
+                    : false,
+                  cooldownEnd: savedState.cooldownEnd
+                };
+              } else {
+                // For other tasks, just check completion
+                loadedTaskStates[task.id] = {
+                  isCompleted: getTaskCompletionStatus(task),
+                  cooldownEnd: null
+                };
+              }
             });
           });
           setTaskStates(loadedTaskStates);
 
-          // Load category states using numeric IDs
+          // Load category states
           const loadedCategoryStates = {};
           taskCategories.forEach(category => {
             const savedState = JSON.parse(
@@ -293,87 +315,46 @@ export default function Tasks() {
     }
   }, [user, userLoading]);
 
-  */
-
-
-// Load all states from localStorage
-  useEffect(() => {
-    setIsClient(true);
-
-   // Updated loadStates function in the useEffect
-const loadStates = () => {
-  try {
-    setLoading(true);
-    
-    if (typeof window !== 'undefined') {
-      // Load task states with cooldown check
-      const loadedTaskStates = {};
-      taskCategories.forEach(category => {
-        category.tasks.forEach(task => {
-          // For surveys and videos, check both completion and cooldown
-          if (task.link.startsWith('/surveys/') || task.link.startsWith('/videos/')) {
-            const pathSegments = task.link.split('/');
-            const taskId = pathSegments[pathSegments.length - 1];
-            const savedState = JSON.parse(
-              localStorage.getItem(`surveyCategory-${taskId}`) || 'null'
-            ) || {
-              isCompleted: false,
-              cooldownEnd: null
-            };
-            
-            // If cooldown has expired, mark as not completed
-            loadedTaskStates[task.id] = {
-              isCompleted: savedState.cooldownEnd && Date.now() < savedState.cooldownEnd 
-                ? savedState.isCompleted 
-                : false,
-              cooldownEnd: savedState.cooldownEnd
-            };
-          } else {
-            // For other tasks, just check completion
-            loadedTaskStates[task.id] = {
-              isCompleted: getTaskCompletionStatus(task),
-              cooldownEnd: null
-            };
-          }
-        });
-      });
-      setTaskStates(loadedTaskStates);
-
-      // Load category states
-      const loadedCategoryStates = {};
-      taskCategories.forEach(category => {
-        const savedState = JSON.parse(
-          localStorage.getItem(`category-${category.id}`) || 'null'
-        ) || {
-          isCompleted: false,
-          cooldownEnd: null
-        };
-        loadedCategoryStates[category.id] = savedState;
-      });
-      setCategoryStates(loadedCategoryStates);
-    }
-  } catch (err) {
-    console.error('Failed to load task states:', err);
-    setError('Failed to load your task progress. Please refresh the page.');
-  } finally {
-    setLoading(false);
-  }
-};
-
-
-
-    if (!userLoading && user) {
-      loadStates();
-    }
-  }, [user, userLoading]);
-
-
   // Redirect if not authenticated
   useEffect(() => {
     if (!userLoading && !user && typeof window !== 'undefined') {
       router.push('/auth/login');
     }
   }, [user, userLoading, router]);
+
+  // Check user activation status
+  const checkActivationStatus = async () => {
+    if (!user) return false;
+    
+    try {
+      const db = getDatabase();
+      const userRef = ref(db, `users/${user.uid}`);
+      const snapshot = await get(userRef);
+      
+      if (snapshot.exists()) {
+        return snapshot.val().isActivated || false;
+      }
+      return false;
+    } catch (error) {
+      console.error("Error checking activation status:", error);
+      return false;
+    }
+  };
+
+  // Handle task click
+  const handleTaskClick = async (task, e) => {
+    e.preventDefault();
+    
+    const isActivated = await checkActivationStatus();
+    if (!isActivated) {
+      setClickedTask(task);
+      setShowActivationModal(true);
+      return;
+    }
+    
+    // Proceed with task if account is activated
+    router.push(task.link);
+  };
 
   // Check if all tasks in a category are completed
   const isCategoryComplete = (categoryId) => {
@@ -410,38 +391,6 @@ const loadStates = () => {
   };
 
   // Update category state when tasks are completed
-
-  /*
-  useEffect(() => {
-    if (loading) return;
-
-    const updatedStates = { ...categoryStates };
-    let hasChanges = false;
-
-    taskCategories.forEach(category => {
-      if (isCategoryComplete(category.id)) {
-        const currentState = categoryStates[category.id] || {};
-        if (!currentState.isCompleted) {
-          updatedStates[category.id] = {
-            isCompleted: true,
-            cooldownEnd: Date.now() + (5 * 60 * 60 * 1000) // 5 hours from now
-          };
-          hasChanges = true;
-        }
-      }
-    });
-
-    if (hasChanges) {
-      setCategoryStates(updatedStates);
-      // Persist to localStorage
-      Object.entries(updatedStates).forEach(([categoryId, state]) => {
-        localStorage.setItem(`category-${categoryId}`, JSON.stringify(state));
-      });
-    }
-  }, [taskStates, loading]);
-*/
-
- // Update category state when tasks are completed
   useEffect(() => {
     if (loading) return;
 
@@ -468,7 +417,6 @@ const loadStates = () => {
       });
     }
   }, [taskStates, loading]);
-
 
   // Handle cooldown countdown
   const [now, setNow] = useState(Date.now());
@@ -523,6 +471,13 @@ const loadStates = () => {
   // Main content
   return (
     <Layout title="Available Tasks">
+      {showActivationModal && (
+        <ActivationModal 
+          onClose={() => setShowActivationModal(false)}
+          onActivate={() => router.push('/subscription')}
+        />
+      )}
+      
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 mb-3">Available Tasks</h1>
@@ -603,7 +558,7 @@ const loadStates = () => {
                           passHref
                           legacyBehavior
                         >
-                          <a>
+                          <a onClick={(e) => disabled ? null : handleTaskClick(task, e)}>
                             <button
                               className={`w-full flex items-center justify-center px-4 py-2 rounded-md text-sm font-medium ${
                                 disabled
@@ -649,6 +604,7 @@ const loadStates = () => {
             <li>Each category has a 5-hour cooldown period after completion</li>
             <li>During cooldown, all tasks in that category will be disabled</li>
             <li>Your progress is saved automatically between sessions</li>
+            <li>Account activation is required to start tasks</li>
           </ul>
         </div>
       </div>
