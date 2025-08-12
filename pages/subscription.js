@@ -198,7 +198,7 @@ const PaymentModal = ({
             />
             <p className="mt-1 text-xs text-gray-500">
               The message must include the till name ({paymentDetails.till_name}), 
-              amount (KSh {amount}), and today's date to be valid.
+              amount (KSh {amount}), and today&apos;s date to be valid.
             </p>
           </div>
 
