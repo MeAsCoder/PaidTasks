@@ -217,7 +217,7 @@ const PaymentModal = ({
               <ol className="space-y-2">
                 {[
                   'Open M-Pesa on your phone',
-                  'Select "Lipa Na M-Pesa"',
+                  'Select &quot;Lipa Na M-Pesa&quot;',
                   `Enter Till Number: ${paymentDetails?.till_number || 'Loading...'}`,
                   `Enter Amount: KSh ${amount}`,
                   'Enter your M-Pesa PIN and send',
