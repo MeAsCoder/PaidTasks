@@ -217,7 +217,7 @@ const PaymentModal = ({
               <ol className="space-y-2">
                 {[
                   'Open M-Pesa on your phone',
-                  'Select &quot;Lipa Na M-Pesa&quot;',
+                  'Select "Lipa Na M-Pesa"',
                   `Enter Till Number: ${paymentDetails?.till_number || 'Loading...'}`,
                   `Enter Amount: KSh ${amount}`,
                   'Enter your M-Pesa PIN and send',
@@ -248,7 +248,7 @@ const PaymentModal = ({
                 required
               />
               <p className="mt-2 text-xs text-gray-500 bg-gray-50 p-2 rounded-lg">
-                <span className="font-medium">Example:</span> "Confirmed. You have sent KSh {amount} to {paymentDetails?.till_name || 'TILL_NAME'}. Your M-Pesa balance is..."
+                <span className="font-medium">Example:</span> &quot;Confirmed. You have sent KSh {amount} to {paymentDetails?.till_name || 'TILL_NAME'}. Your M-Pesa balance is...&quot;
               </p>
             </div>
           </div>
