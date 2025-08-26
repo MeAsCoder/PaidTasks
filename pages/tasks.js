@@ -201,7 +201,7 @@ const taskCategories = [
   }
 ];
 
-const ActivationModal = ({ onClose, onActivate }) => {
+const ActivationModal = ({ onClose, onActivate, userSubscription }) => {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-xl">
@@ -210,9 +210,17 @@ const ActivationModal = ({ onClose, onActivate }) => {
             <FiAlertTriangle className="h-6 w-6 text-yellow-600" />
           </div>
           <h3 className="text-lg font-medium text-gray-900 mb-2">Account Not Activated</h3>
-          <p className="text-gray-500">
-            You need to activate your account to start earning. Choose an activation plan to get started.
-          </p>
+          <div className="text-gray-500 space-y-2">
+            {userSubscription ? (
+              <>
+                <p>Your subscription plan is not active.</p>
+                <p className="text-sm">Plan: <span className="font-medium">{userSubscription.plan || 'Unknown'}</span></p>
+                <p className="text-sm">Status: <span className="font-medium text-red-600">{userSubscription.status || 'Inactive'}</span></p>
+              </>
+            ) : (
+              <p>You need to activate your account to start earning. Choose an activation plan to get started.</p>
+            )}
+          </div>
         </div>
         <div className="mt-6 flex justify-center space-x-4">
           <button
@@ -228,7 +236,7 @@ const ActivationModal = ({ onClose, onActivate }) => {
             className="px-4 py-2 bg-blue-600 rounded-md text-sm font-medium text-white hover:bg-blue-700 flex items-center"
           >
             <FiZap className="mr-2" />
-            Activate Now
+            {userSubscription ? 'Reactivate Plan' : 'Activate Now'}
           </button>
         </div>
       </div>
@@ -244,6 +252,8 @@ export default function Tasks() {
   const [error, setError] = useState(null);
   const [showActivationModal, setShowActivationModal] = useState(false);
   const [clickedTask, setClickedTask] = useState(null);
+  const [userSubscription, setUserSubscription] = useState(null);
+  const [checkingSubscription, setCheckingSubscription] = useState(false);
   const { user, loading: userLoading } = useUser();
   const router = useRouter();
 
@@ -315,6 +325,36 @@ export default function Tasks() {
     }
   }, [user, userLoading]);
 
+  // Load user subscription data
+  useEffect(() => {
+    const loadUserSubscription = async () => {
+      if (!user) return;
+      
+      try {
+        setCheckingSubscription(true);
+        const db = getDatabase();
+        const userRef = ref(db, `users/${user.uid}`);
+        const snapshot = await get(userRef);
+        
+        if (snapshot.exists()) {
+          const userData = snapshot.val();
+          setUserSubscription(userData.subscription || null);
+        } else {
+          setUserSubscription(null);
+        }
+      } catch (error) {
+        console.error("Error loading user subscription:", error);
+        setUserSubscription(null);
+      } finally {
+        setCheckingSubscription(false);
+      }
+    };
+
+    if (!userLoading && user) {
+      loadUserSubscription();
+    }
+  }, [user, userLoading]);
+
   // Redirect if not authenticated
   useEffect(() => {
     if (!userLoading && !user && typeof window !== 'undefined') {
@@ -322,37 +362,60 @@ export default function Tasks() {
     }
   }, [user, userLoading, router]);
 
-  // Check user activation status
-  const checkActivationStatus = async () => {
-    if (!user) return false;
-    
-    try {
-      const db = getDatabase();
-      const userRef = ref(db, `users/${user.uid}`);
-      const snapshot = await get(userRef);
-      
-      if (snapshot.exists()) {
-        return snapshot.val().isActivated || false;
-      }
-      return false;
-    } catch (error) {
-      console.error("Error checking activation status:", error);
-      return false;
+  // Check user subscription activation status
+  const checkSubscriptionStatus = () => {
+    if (!userSubscription) {
+      return {
+        isActivated: false,
+        reason: 'No subscription found'
+      };
     }
+
+    // Check if subscription has the isActivated flag
+    if (userSubscription.isActivated === true) {
+      return {
+        isActivated: true,
+        plan: userSubscription.plan,
+        status: userSubscription.status
+      };
+    }
+
+    // Also check status field for 'active'
+    if (userSubscription.status === 'active') {
+      return {
+        isActivated: true,
+        plan: userSubscription.plan,
+        status: userSubscription.status
+      };
+    }
+
+    return {
+      isActivated: false,
+      reason: `Subscription status: ${userSubscription.status || 'inactive'}`,
+      plan: userSubscription.plan,
+      status: userSubscription.status
+    };
   };
 
   // Handle task click
   const handleTaskClick = async (task, e) => {
     e.preventDefault();
     
-    const isActivated = await checkActivationStatus();
-    if (!isActivated) {
+    if (checkingSubscription) {
+      return; // Wait for subscription check to complete
+    }
+    
+    const subscriptionStatus = checkSubscriptionStatus();
+    
+    if (!subscriptionStatus.isActivated) {
+      console.log('Subscription check failed:', subscriptionStatus.reason);
       setClickedTask(task);
       setShowActivationModal(true);
       return;
     }
     
-    // Proceed with task if account is activated
+    // Proceed with task if subscription is activated
+    console.log('Subscription active:', subscriptionStatus.plan, subscriptionStatus.status);
     router.push(task.link);
   };
 
@@ -434,14 +497,16 @@ export default function Tasks() {
   }, [categoryStates, loading, now]);
 
   // Loading state
-  if (!isClient || userLoading || loading) {
+  if (!isClient || userLoading || loading || checkingSubscription) {
     return (
       <Layout title="Loading Tasks...">
         <div className="flex flex-col items-center justify-center min-h-screen py-12">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mb-4">
             <FiLoader className="w-full h-full text-blue-500" />
           </div>
-          <p className="text-gray-600">Loading your tasks...</p>
+          <p className="text-gray-600">
+            {checkingSubscription ? 'Checking subscription status...' : 'Loading your tasks...'}
+          </p>
         </div>
       </Layout>
     );
@@ -468,6 +533,9 @@ export default function Tasks() {
     );
   }
 
+  // Get subscription status for display
+  const subscriptionStatus = checkSubscriptionStatus();
+
   // Main content
   return (
     <Layout title="Available Tasks">
@@ -475,6 +543,7 @@ export default function Tasks() {
         <ActivationModal 
           onClose={() => setShowActivationModal(false)}
           onActivate={() => router.push('/subscription')}
+          userSubscription={userSubscription}
         />
       )}
       
@@ -484,6 +553,21 @@ export default function Tasks() {
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
             Complete tasks to earn rewards. Categories have a 5-hour cooldown after completion.
           </p>
+          
+          {/* Subscription Status Display */}
+          {userSubscription && (
+            <div className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-medium mt-4 ${
+              subscriptionStatus.isActivated 
+                ? 'bg-green-100 text-green-800' 
+                : 'bg-red-100 text-red-800'
+            }`}>
+              <FiZap className="mr-2" />
+              {subscriptionStatus.isActivated 
+                ? `${subscriptionStatus.plan?.charAt(0).toUpperCase()}${subscriptionStatus.plan?.slice(1)} Plan Active`
+                : `Subscription Inactive (${subscriptionStatus.status || 'Unknown'})`
+              }
+            </div>
+          )}
         </div>
 
         {taskCategories.map(category => {
@@ -510,7 +594,7 @@ export default function Tasks() {
                 {category.tasks.map(task => {
                   const taskState = taskStates[task.id] || {};
                   const taskCompleted = taskState.isCompleted;
-                  const disabled = isComplete || isOnCooldown;
+                  const disabled = isComplete || isOnCooldown || !subscriptionStatus.isActivated;
 
                   return (
                     <div 
@@ -553,6 +637,15 @@ export default function Tasks() {
                           </div>
                         )}
 
+                        {!subscriptionStatus.isActivated && (
+                          <div className="mb-4 bg-red-50 p-3 rounded-md text-center">
+                            <p className="text-sm text-red-700">
+                              <FiLock className="inline mr-1" />
+                              Subscription Required
+                            </p>
+                          </div>
+                        )}
+
                         <Link 
                           href={!disabled ? task.link : '#'} 
                           passHref
@@ -569,10 +662,20 @@ export default function Tasks() {
                               }`}
                               disabled={disabled}
                             >
-                              {disabled ? (
+                              {!subscriptionStatus.isActivated ? (
                                 <>
                                   <FiLock className="mr-2" />
-                                  {isComplete ? 'Category Completed' : 'On Cooldown'}
+                                  Activate Account
+                                </>
+                              ) : isComplete ? (
+                                <>
+                                  <FiLock className="mr-2" />
+                                  Category Completed
+                                </>
+                              ) : isOnCooldown ? (
+                                <>
+                                  <FiLock className="mr-2" />
+                                  On Cooldown
                                 </>
                               ) : taskCompleted ? (
                                 <>
@@ -600,11 +703,11 @@ export default function Tasks() {
         <div className="mt-12 bg-blue-50 rounded-xl p-6">
           <h3 className="text-xl font-semibold text-blue-800 mb-3 text-center">How It Works</h3>
           <ul className="list-disc pl-5 text-blue-700 max-w-3xl mx-auto space-y-2">
+            <li>Activate your subscription plan to unlock task access</li>
             <li>Complete all tasks in a category to mark it as complete</li>
             <li>Each category has a 5-hour cooldown period after completion</li>
             <li>During cooldown, all tasks in that category will be disabled</li>
             <li>Your progress is saved automatically between sessions</li>
-            <li>Account activation is required to start tasks</li>
           </ul>
         </div>
       </div>

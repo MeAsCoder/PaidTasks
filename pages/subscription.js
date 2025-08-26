@@ -50,22 +50,6 @@ const PLANS = [
     ],
     icon: <FiStar className="text-blue-500" />,
     popular: true
-  },
-  {
-    id: 'platinum',
-    name: 'Platinum',
-    price: 3500,
-    features: [
-      'Unlimited survey access',
-      'Unlimited tasks',
-      'VIP support',
-      'KSh 200 per survey',
-      'Daily bonus tasks',
-      'Exclusive features',
-      'Account manager'
-    ],
-    icon: <FiAward className="text-blue-500" />,
-    popular: false
   }
 ];
 
@@ -79,22 +63,25 @@ const PaymentModal = ({
   const [mpesaMessage, setMpesaMessage] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
 
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
+
   const validateMpesaMessage = (message) => {
     if (!paymentDetails) return false;
     
-    const today = new Date();
-    const dateStr = today.toLocaleDateString('en-US', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    }).replace(/\//g, '/');
-    
-    // Check for required components in the message
-    const hasTillName = message.toLowerCase().includes(paymentDetails.till_name.toLowerCase());
     const hasAmount = message.includes(amount.toString());
-    const hasTodayDate = message.includes(dateStr);
+    const hasTillReference = message.toLowerCase().includes(paymentDetails.till_name.toLowerCase());
     
-    return hasTillName && hasAmount && hasTodayDate;
+    return hasAmount && hasTillReference;
   };
 
   const handleSubmit = async (e) => {
@@ -103,14 +90,17 @@ const PaymentModal = ({
     
     try {
       if (!validateMpesaMessage(mpesaMessage)) {
-        throw new Error('Invalid M-Pesa message. Please paste the complete message containing the till name, amount, and today\'s date.');
+        throw new Error('Please paste the complete M-Pesa message containing the amount and till name');
       }
       
-      // Simulate verification delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Simulate verification
+      await new Promise(resolve => setTimeout(resolve, 1500));
       
       toast.success('Payment verified successfully!');
-      onPaymentVerified();
+      
+      // Call the verification handler which will update the database
+      await onPaymentVerified();
+      
       onClose();
     } catch (error) {
       toast.error(error.message);
@@ -119,249 +109,443 @@ const PaymentModal = ({
     }
   };
 
+  const handleBackdropClick = (e) => {
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-xl">
-        <div className="text-center mb-6">
-          <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 mb-4">
-            <FiLock className="h-6 w-6 text-blue-600" />
-          </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
-            Account Activation Required
-          </h3>
-          <p className="text-gray-500 mb-4">
-            To ensure quality submission of surveys and tasks, our platform requires 
-            a <strong>refundable security fee</strong> of <span className="font-bold text-blue-600">KSh {amount}</span>.
-            This amount will be credited back to you upon your first successful withdrawal.
-          </p>
-        </div>
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm"
+      onClick={handleBackdropClick}
+    >
+      <div 
+        className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[95vh] overflow-hidden animate-in fade-in-0 zoom-in-95 duration-300"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="sticky top-0 bg-white border-b border-gray-200 p-6 pb-4">
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
+          >
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
 
-        <div className="mb-6">
-          <h4 className="font-medium text-gray-900 mb-3">Payment Details</h4>
-          <div className="bg-gray-50 p-4 rounded-lg mb-3">
-            <div className="flex justify-between mb-2">
-              <span className="text-gray-600">Till Name:</span>
-              <span className="font-medium">{paymentDetails.till_name}</span>
+          <div className="text-center">
+            <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-gradient-to-r from-blue-100 to-blue-200 mb-4">
+              <FiLock className="h-8 w-8 text-blue-600" />
             </div>
-            <div className="flex justify-between mb-2">
-              <span className="text-gray-600">Till Number:</span>
-              <div className="flex items-center">
-                <span className="font-medium mr-2">{paymentDetails.till_number}</span>
-                <button 
-                  onClick={() => {
-                    navigator.clipboard.writeText(paymentDetails.till_number);
-                    toast.success('Copied to clipboard!');
-                  }}
-                  className="text-blue-500 hover:text-blue-700"
-                >
-                  <FiCopy />
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {paymentDetails.till_image && (
-            <div className="mb-4">
-              <img 
-                src={paymentDetails.till_image} 
-                alt="Payment QR Code" 
-                className="w-full h-auto rounded-lg border border-gray-200"
-              />
-            </div>
-          )}
-
-          <div className="text-sm text-gray-500 mb-4">
-            <p>1. Go to M-Pesa on your phone</p>
-            <p>2. Select <strong>Lipa Na M-Pesa</strong></p>
-            <p>3. Enter Till Number: <strong>{paymentDetails.till_number}</strong></p>
-            <p>4. Enter Amount: <strong>KSh {amount}</strong></p>
-            <p>5. Enter your M-Pesa PIN and send</p>
-            <p>6. Paste the complete M-Pesa confirmation message below</p>
-          </div>
-        </div>
-
-        <form onSubmit={handleSubmit}>
-          <div className="mb-4">
-            <label htmlFor="mpesa-message" className="block text-sm font-medium text-gray-700 mb-1">
-              Paste Complete M-Pesa Message
-            </label>
-            <textarea
-              id="mpesa-message"
-              rows="4"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-              placeholder="Paste the complete M-Pesa confirmation message here..."
-              value={mpesaMessage}
-              onChange={(e) => setMpesaMessage(e.target.value)}
-              required
-            />
-            <p className="mt-1 text-xs text-gray-500">
-              The message must include the till name ({paymentDetails.till_name}), 
-              amount (KSh {amount}), and today&apos;s date to be valid.
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              Account Activation
+            </h3>
+            <p className="text-gray-600 text-sm leading-relaxed">
+              Complete your payment to unlock premium surveys and start earning
             </p>
           </div>
+        </div>
 
-          <div className="flex justify-end space-x-3">
+        {/* Scrollable Content */}
+        <div className="overflow-y-auto max-h-[calc(95vh-140px)]">
+          <div className="p-6 pt-4">
+            {/* Security Fee Notice */}
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4 mb-6">
+              <div className="flex items-center mb-2">
+                <FiAward className="h-5 w-5 text-blue-600 mr-2" />
+                <span className="font-medium text-blue-900">Refundable Security Fee</span>
+              </div>
+              <p className="text-blue-800 text-sm">
+                <span className="font-bold">KSh {amount}</span> will be credited back upon your first successful withdrawal
+              </p>
+            </div>
+
+            {/* Payment Details */}
+            <div className="mb-6">
+              <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
+                <svg className="h-5 w-5 text-gray-600 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                </svg>
+                Payment Details
+              </h4>
+              
+              <div className="bg-gray-50 rounded-xl p-4 space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600 text-sm">Till Name:</span>
+                  <span className="font-medium text-gray-900">{paymentDetails?.till_name || 'Loading...'}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600 text-sm">Till Number:</span>
+                  <div className="flex items-center space-x-2">
+                    <span className="font-mono font-bold text-gray-900 bg-white px-2 py-1 rounded border">
+                      {paymentDetails?.till_number || 'Loading...'}
+                    </span>
+                    <button 
+                      onClick={() => {
+                        if (paymentDetails?.till_number) {
+                          navigator.clipboard.writeText(paymentDetails.till_number);
+                          toast.success('Copied to clipboard!');
+                        }
+                      }}
+                      className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                      title="Copy till number"
+                      disabled={!paymentDetails?.till_number}
+                    >
+                      <FiCopy className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600 text-sm">Amount:</span>
+                  <span className="font-bold text-lg text-green-600">KSh {amount}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Payment Instructions */}
+            <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4 mb-6">
+              <h5 className="font-semibold text-green-800 mb-3 flex items-center">
+                <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Payment Steps
+              </h5>
+              <ol className="space-y-2">
+                {[
+                  'Open M-Pesa on your phone',
+                  'Select "Lipa Na M-Pesa"',
+                  `Enter Till Number: ${paymentDetails?.till_number || 'Loading...'}`,
+                  `Enter Amount: KSh ${amount}`,
+                  'Enter your M-Pesa PIN and send',
+                  'Copy the confirmation message below'
+                ].map((step, index) => (
+                  <li key={index} className="flex items-start text-sm text-green-700">
+                    <span className="flex-shrink-0 w-5 h-5 bg-green-600 text-white rounded-full flex items-center justify-center text-xs font-bold mr-3 mt-0.5">
+                      {index + 1}
+                    </span>
+                    {step}
+                  </li>
+                ))}
+              </ol>
+            </div>
+
+            {/* Message Input */}
+            <div className="mb-6">
+              <label htmlFor="mpesa-message" className="block text-sm font-semibold text-gray-700 mb-2">
+                M-Pesa Confirmation Message
+              </label>
+              <textarea
+                id="mpesa-message"
+                rows={4}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                placeholder="Paste your complete M-Pesa confirmation message here..."
+                value={mpesaMessage}
+                onChange={(e) => setMpesaMessage(e.target.value)}
+                required
+              />
+              <p className="mt-2 text-xs text-gray-500 bg-gray-50 p-2 rounded-lg">
+                <span className="font-medium">Example:</span> "Confirmed. You have sent KSh {amount} to {paymentDetails?.till_name || 'TILL_NAME'}. Your M-Pesa balance is..."
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="sticky bottom-0 bg-white border-t border-gray-200 p-6 pt-4">
+          <div className="flex space-x-3">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+              className="flex-1 px-4 py-3 border border-gray-300 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+              disabled={isVerifying}
             >
               Cancel
             </button>
             <button
               type="submit"
-              disabled={isVerifying}
-              className="px-4 py-2 bg-blue-600 rounded-md text-sm font-medium text-white hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed flex items-center justify-center"
+              onClick={handleSubmit}
+              disabled={isVerifying || !mpesaMessage.trim() || !paymentDetails?.till_number}
+              className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl text-sm font-medium text-white hover:from-blue-700 hover:to-blue-800 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed flex items-center justify-center transition-all"
             >
               {isVerifying ? (
                 <>
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
                   Verifying...
                 </>
               ) : (
-                'Verify Payment'
+                <>
+                  <FiCheck className="mr-2 h-4 w-4" />
+                  Verify Payment
+                </>
               )}
             </button>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );
 };
 
+// Main Subscription Page Component
 const SubscriptionPage = () => {
   const router = useRouter();
-  const [paymentDetails, setPaymentDetails] = useState(null);
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [hoveredPlan, setHoveredPlan] = useState(null);
-  const auth = getAuth();
+  const [paymentDetails, setPaymentDetails] = useState(null); // Start with null
+  const [configLoading, setConfigLoading] = useState(false);
+
+  // Load payment config from Firebase
+  const loadPaymentConfig = async () => {
+    try {
+      setConfigLoading(true);
+      const db = getDatabase();
+      const configRef = ref(db, 'config');
+      const snapshot = await get(configRef);
+      
+      if (snapshot.exists()) {
+        const config = snapshot.val();
+        console.log('Loaded config:', config); // Debug log
+        
+        setPaymentDetails({
+          till_name: config.till_name || "SURVEY PLATFORM",
+          till_number: config.till_number || "123456"
+        });
+        
+        toast.success('Payment details loaded successfully!');
+      } else {
+        // Fallback values if config doesn't exist
+        console.warn('No config found in Firebase, using fallback values');
+        setPaymentDetails({
+          till_name: "SURVEY PLATFORM",
+          till_number: "123456"
+        });
+        toast.warning('Using default payment details. Please contact support if this persists.');
+      }
+    } catch (error) {
+      console.error('Error loading payment config:', error);
+      // Use fallback values on error
+      setPaymentDetails({
+        till_name: "SURVEY PLATFORM", 
+        till_number: "123456"
+      });
+      toast.error('Failed to load payment details. Using default values.');
+    } finally {
+      setConfigLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchPaymentDetails = async () => {
-      const db = getDatabase();
-      const paymentRef = ref(db, 'config/payment');
+    const auth = getAuth();
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
+      setUser(user);
       
-      try {
-        const snapshot = await get(paymentRef);
-        if (snapshot.exists()) {
-          setPaymentDetails(snapshot.val());
-        }
-      } catch (error) {
-        console.error("Error fetching payment details:", error);
-        toast.error('Failed to load payment details');
+      if (user) {
+        // Load payment config when user is authenticated
+        await loadPaymentConfig();
       }
-    };
+      
+      setLoading(false);
+    });
 
-    fetchPaymentDetails();
+    return () => unsubscribe();
   }, []);
 
-  const handleActivate = (plan) => {
+  const handleSelectPlan = async (plan) => {
     setSelectedPlan(plan);
-    setShowPaymentModal(true);
+    
+    // Ensure payment details are loaded before showing modal
+    if (!paymentDetails && !configLoading) {
+      toast.info('Loading payment details...');
+      await loadPaymentConfig();
+    }
+    
+    // Only show modal if we have payment details
+    if (paymentDetails || !configLoading) {
+      setShowPaymentModal(true);
+    }
   };
 
   const handlePaymentVerified = async () => {
     try {
+      if (!user || !selectedPlan) return;
+
       const db = getDatabase();
-      await update(ref(db, `users/${auth.currentUser.uid}`), {
-        isActivated: true,
-        plan: selectedPlan.id,
-        activatedAt: new Date().toISOString()
+      const userRef = ref(db, `users/${user.uid}`);
+      
+      // Update user subscription with isActivated flag
+      await update(userRef, {
+        subscription: {
+          plan: selectedPlan.id,
+          activatedAt: Date.now(),
+          status: 'active',
+          isActivated: true // Add the boolean flag
+        }
       });
-      toast.success('Account activated successfully!');
-      router.push('/tasks');
+
+      toast.success(`${selectedPlan.name} plan activated successfully!`);
+      
+      // Redirect to dashboard or surveys page
+      setTimeout(() => {
+        router.push('/dashboard');
+      }, 2000);
+      
     } catch (error) {
-      toast.error('Error activating account. Please try again.');
-      console.error("Error updating user data:", error);
+      console.error('Error updating subscription:', error);
+      toast.error('Failed to activate subscription. Please try again.');
     }
   };
 
+  if (loading) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (!user) {
+    router.push('/login');
+    return null;
+  }
+
   return (
-    <Layout title="Subscription Plans">
-      <ToastContainer position="bottom-right" />
-      
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <Layout>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
         <div className="text-center mb-12">
-          <h1 className="text-3xl font-extrabold text-gray-900 sm:text-4xl">
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">
             Choose Your Plan
           </h1>
-          <p className="mt-4 text-xl text-gray-600">
-            Select the plan that works best for you and start earning today
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            Select the perfect plan to start earning from surveys. All plans include a refundable security fee.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
+        {/* Loading Config Notice */}
+        {configLoading && (
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6 text-center">
+            <div className="flex items-center justify-center mb-2">
+              <svg className="animate-spin h-5 w-5 text-blue-600 mr-2" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <span className="text-blue-800 font-medium">Loading payment details...</span>
+            </div>
+          </div>
+        )}
+
+        {/* Plans Grid */}
+        <div className="grid md:grid-cols-3 gap-8 mb-8">
           {PLANS.map((plan) => (
             <div
               key={plan.id}
-              className={`relative rounded-xl border border-gray-200 bg-white p-6 shadow-sm transition-all duration-300 ${
-                hoveredPlan === plan.id ? 'transform scale-105 shadow-lg' : ''
-              } ${
-                plan.popular ? 'border-2 border-blue-500' : ''
+              className={`relative bg-white rounded-2xl shadow-lg border-2 transition-all duration-300 hover:shadow-xl ${
+                plan.popular 
+                  ? 'border-blue-500 ring-2 ring-blue-500 ring-opacity-20' 
+                  : 'border-gray-200 hover:border-blue-300'
               }`}
-              onMouseEnter={() => setHoveredPlan(plan.id)}
-              onMouseLeave={() => setHoveredPlan(null)}
             >
               {plan.popular && (
-                <div className="absolute top-0 right-0 -mt-3 -mr-3 bg-blue-500 text-white text-xs font-bold px-3 py-1 rounded-full">
-                  POPULAR
+                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                  <span className="bg-blue-500 text-white px-4 py-1 rounded-full text-sm font-medium">
+                    Most Popular
+                  </span>
                 </div>
               )}
-              
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-2xl font-bold text-gray-900">{plan.name}</h3>
-                <div className="text-blue-500 text-2xl">
-                  {plan.icon}
+
+              <div className="p-8">
+                <div className="text-center mb-6">
+                  <div className="mb-4">{plan.icon}</div>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                    {plan.name}
+                  </h3>
+                  <div className="mb-4">
+                    <span className="text-4xl font-bold text-gray-900">
+                      KSh {plan.price}
+                    </span>
+                    <span className="text-gray-600 ml-2">one-time</span>
+                  </div>
                 </div>
+
+                <ul className="space-y-4 mb-8">
+                  {plan.features.map((feature, index) => (
+                    <li key={index} className="flex items-start">
+                      <FiCheck className="h-5 w-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
+                      <span className="text-gray-700">{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                <button
+                  onClick={() => handleSelectPlan(plan)}
+                  disabled={configLoading}
+                  className={`w-full py-4 px-6 rounded-xl font-medium transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed ${
+                    plan.popular
+                      ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg disabled:bg-blue-400'
+                      : 'bg-gray-100 hover:bg-gray-200 text-gray-900 disabled:bg-gray-50'
+                  }`}
+                >
+                  {configLoading ? 'Loading...' : 'Get Started'}
+                </button>
               </div>
-              
-              <div className="mb-6">
-                <p className="text-3xl font-bold text-gray-900 mb-2">KSh {plan.price}</p>
-                <p className="text-gray-500">One-time activation fee</p>
-              </div>
-              
-              <ul className="space-y-3 mb-8">
-                {plan.features.map((feature, index) => (
-                  <li key={index} className="flex items-start">
-                    <FiCheck className="h-5 w-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                    <span className="text-gray-700">{feature}</span>
-                  </li>
-                ))}
-              </ul>
-              
-              <button
-                onClick={() => handleActivate(plan)}
-                className={`w-full py-3 px-4 rounded-md font-medium text-white transition-colors ${
-                  plan.popular 
-                    ? 'bg-blue-600 hover:bg-blue-700' 
-                    : 'bg-gray-800 hover:bg-gray-900'
-                }`}
-              >
-                Activate {plan.name}
-              </button>
             </div>
           ))}
         </div>
 
-        <div className="mt-12 text-center">
-          <p className="text-gray-500">
-            All plans include a refundable security fee that will be credited back upon your first withdrawal.
+        {/* Security Fee Notice */}
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6 text-center">
+          <FiAward className="h-8 w-8 text-blue-600 mx-auto mb-3" />
+          <h3 className="text-lg font-semibold text-blue-900 mb-2">
+            100% Refundable Security Fee
+          </h3>
+          <p className="text-blue-800">
+            Your activation fee will be fully refunded when you make your first withdrawal. 
+            This helps us maintain a quality platform for serious earners.
           </p>
         </div>
+
+        {/* Payment Details Preview (Optional - shows loaded config) */}
+        {paymentDetails && !configLoading && (
+          <div className="mt-6 bg-gray-50 border border-gray-200 rounded-xl p-4">
+            <h4 className="font-medium text-gray-900 mb-2 text-center">Payment Information Loaded</h4>
+            <div className="flex justify-center space-x-6 text-sm text-gray-600">
+              <span>Till: <span className="font-medium">{paymentDetails.till_name}</span></span>
+              <span>Number: <span className="font-mono font-medium">{paymentDetails.till_number}</span></span>
+            </div>
+          </div>
+        )}
       </div>
 
+      {/* Payment Modal */}
       <PaymentModal
         isOpen={showPaymentModal}
         onClose={() => setShowPaymentModal(false)}
-        paymentDetails={paymentDetails || { till_name: 'Loading...', till_number: '...' }}
-        amount={selectedPlan?.price || 0}
+        paymentDetails={paymentDetails}
+        amount={selectedPlan?.price}
         onPaymentVerified={handlePaymentVerified}
+      />
+
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
       />
     </Layout>
   );
