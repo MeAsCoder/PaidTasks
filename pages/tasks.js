@@ -413,6 +413,12 @@ export default function Tasks() {
       setShowActivationModal(true);
       return;
     }
+
+    if (!subscriptionStatus.isActivated) {
+        router.push('/subscription');
+        return;
+    }
+
     
     // Proceed with task if subscription is activated
     console.log('Subscription active:', subscriptionStatus.plan, subscriptionStatus.status);
@@ -652,43 +658,53 @@ export default function Tasks() {
                           legacyBehavior
                         >
                           <a onClick={(e) => disabled ? null : handleTaskClick(task, e)}>
-                            <button
-                              className={`w-full flex items-center justify-center px-4 py-2 rounded-md text-sm font-medium ${
-                                disabled
-                                  ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
-                                  : taskCompleted
-                                    ? 'bg-green-100 text-green-800'
-                                    : 'bg-blue-600 text-white hover:bg-blue-700'
-                              }`}
-                              disabled={disabled}
-                            >
-                              {!subscriptionStatus.isActivated ? (
-                                <>
-                                  <FiLock className="mr-2" />
-                                  Activate Account
-                                </>
-                              ) : isComplete ? (
-                                <>
-                                  <FiLock className="mr-2" />
-                                  Category Completed
-                                </>
-                              ) : isOnCooldown ? (
-                                <>
-                                  <FiLock className="mr-2" />
-                                  On Cooldown
-                                </>
-                              ) : taskCompleted ? (
-                                <>
-                                  <FiCheckCircle className="mr-2" />
-                                  Completed
-                                </>
-                              ) : (
-                                <>
-                                  <FiPlay className="mr-2" />
-                                  Start Task
-                                </>
-                              )}
-                            </button>
+
+                                             <button
+  className={`w-full flex items-center justify-center px-4 py-2 rounded-md text-sm font-medium ${
+    isComplete || isOnCooldown
+      ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
+      : taskCompleted
+      ? 'bg-green-100 text-green-800'
+      : 'bg-blue-600 text-white hover:bg-blue-700'
+  }`}
+  disabled={isComplete || isOnCooldown}
+  onClick={(e) => {
+    e.preventDefault();
+    if (!subscriptionStatus.isActivated) {
+      router.push('/subscription'); // 🚀 Redirect to subscription page
+    } else if (!isComplete && !isOnCooldown) {
+      handleTaskClick(task, e);
+    }
+  }}
+>
+  {!subscriptionStatus.isActivated ? (
+    <>
+      <FiLock className="mr-2" /> Activate Account
+    </>
+  ) : isComplete ? (
+    <>
+      <FiLock className="mr-2" /> Category Completed
+    </>
+  ) : isOnCooldown ? (
+    <>
+      <FiLock className="mr-2" /> On Cooldown
+    </>
+  ) : taskCompleted ? (
+    <>
+      <FiCheckCircle className="mr-2" /> Completed
+    </>
+  ) : (
+    <>
+      <FiPlay className="mr-2" /> Start Task
+    </>
+  )}
+</button>
+
+
+
+
+
+
                           </a>
                         </Link>
                       </div>
