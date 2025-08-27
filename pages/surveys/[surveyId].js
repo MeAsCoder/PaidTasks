@@ -2,18 +2,22 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
 import Layout from '../../components/Layout'
 import { FiCheck, FiClock, FiLock,FiArrowLeft, FiArrowRight } from 'react-icons/fi'
-
+// Import Firebase Realtime Database functions
+import { ref, get, set, update, push } from 'firebase/database'
+import { database } from '@/lib/firebase'
+import { useAuth } from '@/context/AuthContext'
 
 const SurveyPage = () => {
   const router = useRouter()
   const { surveyId } = router.query
+  const { currentUser, userData } = useAuth() // Get current user from your AuthContext
 
   // Define all survey questions
-
-const allSurveys = {
+  const allSurveys = {
     'consumer-preferences': {
       title: "Consumer Preferences Survey",
       reward: 100,
+      category: 'consumer-preferences',
       questions: [
         {
           id: 1,
@@ -155,6 +159,8 @@ const allSurveys = {
     },
     'tech-usage': {
       title: "Tech Usage Questionnaire",
+      reward: 100,
+      category: 'tech-usage',
       questions: [
         {
           id: 1,
@@ -296,6 +302,8 @@ const allSurveys = {
     },
     'social-media': {
       title: "Social Media Habits Survey",
+      reward: 100,
+      category: 'social-media',
       questions: [
         {
           id: 1,
@@ -437,6 +445,8 @@ const allSurveys = {
     },
     'shopping-behavior': {
       title: "Shopping Behavior Study",
+      reward: 100,
+      category: 'shopping-behavior',
       questions: [
         {
           id: 1,
@@ -578,8 +588,7 @@ const allSurveys = {
     }
   }
 
-
-// Get current survey or default
+  // Get current survey or default
   const currentSurvey = allSurveys[surveyId] || allSurveys['consumer-preferences'];
   const surveyQuestions = currentSurvey.questions;
 
@@ -588,7 +597,7 @@ const allSurveys = {
   const [answers, setAnswers] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [canProceed, setCanProceed] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(15); // 15 seconds per question minimum
+  const [timeLeft, setTimeLeft] = useState(1); // 15 seconds per question minimum
   const [validationError, setValidationError] = useState('');
   const [categoryState, setCategoryState] = useState({
     isCompleted: false,
@@ -644,6 +653,79 @@ const allSurveys = {
     return () => clearInterval(timer);
   }, [categoryState.cooldownEnd, surveyId]);
 
+  // Firebase Realtime Database function to update user's survey completion stats
+  const updateUserSurveyStats = async (category) => {
+    if (!currentUser?.uid) {
+      console.error('No user logged in');
+      return false;
+    }
+
+    try {
+      // Use the same path structure as your userService (usersweb)
+      const userRef = ref(database, `usersweb/${currentUser.uid}`);
+      
+      // Get current user data
+      const snapshot = await get(userRef);
+      const userData = snapshot.exists() ? snapshot.val() : null;
+
+      if (!userData) {
+        // If user doesn't exist, create basic profile first
+        const newUserData = {
+          completedSurveys: {
+            total: 1,
+            [category]: 1
+          },
+          totalPoints: currentSurvey.reward,
+          earnings: currentSurvey.reward, // Match your userService structure
+          completed: 1, // Match your userService structure
+          lastSurveyCompleted: new Date().toISOString(),
+          balance: userData?.balance || 0, // Keep existing balance if any
+          createdAt: new Date().toISOString()
+        };
+        await set(userRef, newUserData);
+      } else {
+        // Update existing user document
+        const currentTotal = userData.completedSurveys?.total || userData.completed || 0;
+        const currentCategoryCount = userData.completedSurveys?.[category] || 0;
+        const currentPoints = userData.totalPoints || userData.earnings || 0;
+        const currentCompleted = userData.completed || 0;
+        const currentEarnings = userData.earnings || 0;
+
+        const updates = {};
+        updates[`completedSurveys/total`] = currentTotal + 1;
+        updates[`completedSurveys/${category}`] = currentCategoryCount + 1;
+        updates[`totalPoints`] = currentPoints + currentSurvey.reward;
+        updates[`earnings`] = currentEarnings + currentSurvey.reward; // Update earnings too
+        updates[`completed`] = currentCompleted + 1; // Update completed count
+        updates[`lastSurveyCompleted`] = new Date().toISOString();
+        updates[`lastUpdated`] = new Date().toISOString();
+
+        // Apply updates to the user document
+        const userUpdateRef = ref(database, `usersweb/${currentUser.uid}`);
+        await update(userUpdateRef, updates);
+      }
+
+      // Store individual survey completion record
+      const surveyCompletionsRef = ref(database, 'surveyCompletions');
+      const newCompletionRef = push(surveyCompletionsRef);
+      
+      await set(newCompletionRef, {
+        userId: currentUser.uid,
+        surveyId: surveyId,
+        category: category,
+        surveyTitle: currentSurvey.title,
+        completedAt: new Date().toISOString(),
+        answers: answers,
+        pointsEarned: currentSurvey.reward
+      });
+
+      return true;
+    } catch (error) {
+      console.error('Error updating user survey stats:', error);
+      return false;
+    }
+  };
+
   // Handle answer selection
   const handleAnswer = (questionId, answer) => {
     setAnswers(prev => ({
@@ -691,12 +773,23 @@ const allSurveys = {
   // Submit survey and mark category as completed
   const handleSubmit = async () => {
     if (!validateCurrentQuestion()) return;
+    if (!currentUser?.uid) {
+      alert('Please log in to submit the survey');
+      return;
+    }
     
     setIsSubmitting(true);
     
     try {
-      // Simulate API submission
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Update Firebase with survey completion
+      const firebaseUpdateSuccess = await updateUserSurveyStats(currentSurvey.category);
+      
+      if (!firebaseUpdateSuccess) {
+        throw new Error('Failed to update survey stats in database');
+      }
+
+      // Simulate additional API submission if needed
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
       // Set completion state with 5 hour cooldown
       const cooldownHours = 5;
@@ -720,6 +813,7 @@ const allSurveys = {
       });
     } catch (error) {
       console.error('Submission error:', error);
+      alert('Failed to submit survey. Please try again.');
       setIsSubmitting(false);
     }
   };
@@ -816,6 +910,29 @@ const allSurveys = {
         return null;
     }
   };
+
+  // Show loading if user is not authenticated
+  if (!currentUser) {
+    return (
+      <Layout title="Survey">
+        <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-md overflow-hidden p-6 my-8 text-center">
+          <div className="mb-6 text-blue-500">
+            <FiLock className="inline-block text-5xl" />
+          </div>
+          <h2 className="text-2xl font-bold mb-2">Authentication Required</h2>
+          <p className="text-gray-600 mb-6">
+            Please log in to take surveys and earn rewards.
+          </p>
+          <button
+            onClick={() => router.push('/login')}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
+          >
+            Go to Login
+          </button>
+        </div>
+      </Layout>
+    );
+  }
 
   // Render completed state
   if (categoryState.isCompleted && categoryState.cooldownEnd) {
@@ -938,9 +1055,9 @@ const allSurveys = {
           ) : (
             <button
               onClick={handleSubmit}
-              disabled={isSubmitting}
+              disabled={isSubmitting || !canProceed}
               className={`px-4 py-2 rounded-md flex items-center ${
-                isSubmitting 
+                isSubmitting || !canProceed
                   ? 'bg-green-300 text-white cursor-not-allowed' 
                   : 'bg-green-600 text-white hover:bg-green-700'
               }`}
