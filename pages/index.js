@@ -1,9 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import Head from 'next/head';
-import { FiArrowRight, FiCheck, FiDollarSign, FiClock, FiAward, FiUsers, FiTrendingUp } from 'react-icons/fi';
+import { FiArrowRight, FiCheck, FiDollarSign, FiClock, FiAward, FiUsers, FiTrendingUp, FiGlobe, FiCpu, FiFileText, FiMessageSquare, FiImage, FiSearch } from 'react-icons/fi';
 import Layout from '@/components/Layout';
 import SignupModal from '../components/SignupModal';
-//import { useSession } from 'next-auth/react';
 import { useAuth } from '../context/AuthContext';
 
 export default function Home() {
@@ -11,99 +10,189 @@ export default function Home() {
   const [isScrolling, setIsScrolling] = useState(false);
   const featuresRef = useRef(null);
   const testimonialsRef = useRef(null);
+  const aiTasksRef = useRef(null);
 
-  //const { data: session, status } = useSession();
   const [showModal, setShowModal] = useState(false);
   const { currentUser, loading } = useAuth();
-   const [pageLoaded, setPageLoaded] = useState(false);
-
-  // Testimonial data
+  const [pageLoaded, setPageLoaded] = useState(false);
 
   const testimonials = [
-  {
-    id: 1,
-    name: "Sarah Johnson",
-    role: "Freelance Designer",
-    content: "TaskEarn has completely transformed how I earn money online. I made $1,200 in my first month just completing simple tasks in my spare time!",
-    avatar: "/avatars/sarah.jpg",
-    earnings: "$1,200/month"
-  },
-  {
-    id: 2,
-    name: "Michael Chen",
-    role: "College Student",
-    content: "As a student, the flexibility is perfect. I earn about $500/month between classes, which covers all my expenses. Highly recommended!",
-    avatar: "/avatars/michael.jpg",
-    earnings: "$500/month"
-  },
-  {
-    id: 3,
-    name: "Emma Rodriguez",
-    role: "Stay-at-Home Mom",
-    content: "I never thought I could earn real money from home. TaskEarn proved me wrong - $800 last month while taking care of my kids!",
-    avatar: "/avatars/emma.jpg",
-    earnings: "$800/month"
-  },
-  {
-    id: 4,
-    name: "David Wilson",
-    role: "Retired Veteran",
-    content: "This platform gave me purpose after retirement. I'm earning $900/month reviewing products - something I enjoy doing anyway!",
-    avatar: "/avatars/david.jpg",
-    earnings: "$900/month"
-  },
-  {
-    id: 5,
-    name: "Priya Patel",
-    role: "Digital Nomad",
-    content: "I travel full-time and TaskEarn provides consistent income anywhere. Made $1,500 last month from beaches in Bali!",
-    avatar: "/avatars/priya.jpg",
-    earnings: "$1,500/month"
-  },
-  {
-    id: 6,
-    name: "James Williams",
-    role: "Rideshare Driver",
-    content: "When I'm waiting for rides, I complete tasks. Extra $600/month with zero effort - it's like free money!",
-    avatar: "/avatars/james.jpg",
-    earnings: "$600/month"
-  },
-  {
-    id: 7,
-    name: "Olivia Kim",
-    role: "Graduate Student",
-    content: "Paying off student loans faster thanks to TaskEarn. $750/month just during my commute and lunch breaks!",
-    avatar: "/avatars/olivia.jpg",
-    earnings: "$750/month"
-  },
-  {
-    id: 8,
-    name: "Carlos Mendez",
-    role: "Part-Time Worker",
-    content: "Lost my main job but TaskEarn covered my rent. Earned $1,100 last month working 10-15 hours/week!",
-    avatar: "/avatars/carlos.jpg",
-    earnings: "$1,100/month"
-  },
-  {
-    id: 9,
-    name: "Aisha Bah",
-    role: "Entrepreneur",
-    content: "I use TaskEarn to fund my startup. Consistent $1,800/month gives me financial runway to build my business!",
-    avatar: "/avatars/aisha.jpg",
-    earnings: "$1,800/month"
-  },
-  {
-    id: 10,
-    name: "Thomas O'Reilly",
-    role: "Retail Worker",
-    content: "This side hustle pays more than my main job! $2,300 last month - I'm quitting retail to do this full-time!",
-    avatar: "/avatars/thomas.jpg",
-    earnings: "$2,300/month"
-  }
-];
-  
+    {
+      id: 1,
+      name: "Sarah Johnson",
+      role: "Freelance Designer",
+      country: "United States",
+      flag: "🇺🇸",
+      content: "TaskEarn has completely transformed how I earn money online. I made $1,200 in my first month just completing simple tasks in my spare time!",
+      avatar: "/avatars/sarah.jpg",
+      earnings: "$1,200/month"
+    },
+    {
+      id: 2,
+      name: "Wanjiru Kamau",
+      role: "College Student",
+      country: "Kenya",
+      flag: "🇰🇪",
+      content: "As a student in Nairobi, TaskEarn gives me the flexibility to earn around $320/month between classes. It covers all my transport and food expenses!",
+      avatar: "/avatars/wanjiru.jpg",
+      earnings: "$320/month"
+    },
+    {
+      id: 3,
+      name: "Emma Rodriguez",
+      role: "Stay-at-Home Mom",
+      country: "Mexico",
+      flag: "🇲🇽",
+      content: "I never thought I could earn real money from home. TaskEarn proved me wrong — $800 last month while taking care of my kids!",
+      avatar: "/avatars/emma.jpg",
+      earnings: "$800/month"
+    },
+    {
+      id: 4,
+      name: "Kipchoge Mutai",
+      role: "Freelance Writer",
+      country: "Kenya",
+      flag: "🇰🇪",
+      content: "I complete AI data labeling and text review tasks every evening. Earning consistently every month has helped me save for my own business!",
+      avatar: "/avatars/kipchoge.jpg",
+      earnings: "$450/month"
+    },
+    {
+      id: 5,
+      name: "Priya Patel",
+      role: "Digital Nomad",
+      country: "India",
+      flag: "🇮🇳",
+      content: "I travel full-time and TaskEarn provides consistent income anywhere. Made $1,500 last month from beaches in Goa!",
+      avatar: "/avatars/priya.jpg",
+      earnings: "$1,500/month"
+    },
+    {
+      id: 6,
+      name: "Akinyi Otieno",
+      role: "Graphic Designer",
+      country: "Kenya",
+      flag: "🇰🇪",
+      content: "The image annotation and AI feedback tasks are perfect for someone with a design background. I earn steady income working just a few hours daily.",
+      avatar: "/avatars/akinyi.jpg",
+      earnings: "$380/month"
+    },
+    {
+      id: 7,
+      name: "Carlos Mendez",
+      role: "Part-Time Worker",
+      country: "Colombia",
+      flag: "🇨🇴",
+      content: "TaskEarn helped me cover my rent when I was between jobs. Earned the equivalent of $1,100 last month working 10–15 hours per week!",
+      avatar: "/avatars/carlos.jpg",
+      earnings: "$1,100/month"
+    },
+    {
+      id: 8,
+      name: "Fatuma Noor",
+      role: "Teacher",
+      country: "Kenya",
+      flag: "🇰🇪",
+      content: "After school hours, I do translation and survey tasks. This platform has given me a reliable second income that I didn't think was possible.",
+      avatar: "/avatars/fatuma.jpg",
+      earnings: "$290/month"
+    },
+    {
+      id: 9,
+      name: "Aisha Bah",
+      role: "Entrepreneur",
+      country: "Nigeria",
+      flag: "🇳🇬",
+      content: "I use TaskEarn to fund my startup. Consistent $1,800/month gives me financial runway to build my business!",
+      avatar: "/avatars/aisha.jpg",
+      earnings: "$1,800/month"
+    },
+    {
+      id: 10,
+      name: "Thomas O'Reilly",
+      role: "Retail Worker",
+      country: "Ireland",
+      flag: "🇮🇪",
+      content: "This side hustle pays more than I expected! $2,300 last month — I'm putting it all towards buying my first home.",
+      avatar: "/avatars/thomas.jpg",
+      earnings: "$2,300/month"
+    },
+    {
+      id: 11,
+      name: "Yuki Tanaka",
+      role: "Software Engineer",
+      country: "Japan",
+      flag: "🇯🇵",
+      content: "I complete AI model feedback tasks in my free time. The technical tasks pay well and match my background perfectly.",
+      avatar: "/avatars/yuki.jpg",
+      earnings: "$950/month"
+    },
+    {
+      id: 12,
+      name: "Lerato Dlamini",
+      role: "Marketing Graduate",
+      country: "South Africa",
+      flag: "🇿🇦",
+      content: "I was job hunting and TaskEarn bridged the gap. The survey and content tasks are simple and the payouts are reliable.",
+      avatar: "/avatars/lerato.jpg",
+      earnings: "$410/month"
+    }
+  ];
 
-  // Auto-rotate testimonials
+  const aiTaskCategories = [
+    {
+      icon: <FiFileText className="w-7 h-7" />,
+      title: "AI Text & Data Labeling",
+      description: "Help train AI models by labeling datasets, classifying text, and tagging content. No technical background required — just attention to detail.",
+      pay: "$5 – $20 per hour",
+      color: "blue"
+    },
+    {
+      icon: <FiMessageSquare className="w-7 h-7" />,
+      title: "AI Conversation Review",
+      description: "Rate and evaluate AI-generated responses for quality, accuracy, and tone. Your feedback directly improves how AI assistants behave.",
+      pay: "$8 – $25 per hour",
+      color: "purple"
+    },
+    {
+      icon: <FiImage className="w-7 h-7" />,
+      title: "Image & Video Annotation",
+      description: "Draw bounding boxes, tag objects, and annotate visual content used to train computer vision and machine learning models.",
+      pay: "$6 – $18 per hour",
+      color: "orange"
+    },
+    {
+      icon: <FiSearch className="w-7 h-7" />,
+      title: "Search Quality Rating",
+      description: "Evaluate search engine results for relevance and accuracy. Help improve how the world finds information online.",
+      pay: "$10 – $22 per hour",
+      color: "green"
+    },
+    {
+      icon: <FiCpu className="w-7 h-7" />,
+      title: "AI Model Testing",
+      description: "Test new AI tools, provide structured feedback, and identify edge cases. You'll be among the first to interact with cutting-edge AI.",
+      pay: "$12 – $30 per hour",
+      color: "indigo"
+    },
+    {
+      icon: <FiGlobe className="w-7 h-7" />,
+      title: "Translation & Localization",
+      description: "Translate AI training content and localize datasets across languages. High demand for Swahili, French, Arabic, and more.",
+      pay: "$9 – $28 per hour",
+      color: "teal"
+    }
+  ];
+
+  const colorMap = {
+    blue: { bg: "bg-blue-50", icon: "bg-blue-100 text-blue-600", badge: "bg-blue-100 text-blue-700" },
+    purple: { bg: "bg-purple-50", icon: "bg-purple-100 text-purple-600", badge: "bg-purple-100 text-purple-700" },
+    orange: { bg: "bg-orange-50", icon: "bg-orange-100 text-orange-600", badge: "bg-orange-100 text-orange-700" },
+    green: { bg: "bg-green-50", icon: "bg-green-100 text-green-600", badge: "bg-green-100 text-green-700" },
+    indigo: { bg: "bg-indigo-50", icon: "bg-indigo-100 text-indigo-600", badge: "bg-indigo-100 text-indigo-700" },
+    teal: { bg: "bg-teal-50", icon: "bg-teal-100 text-teal-600", badge: "bg-teal-100 text-teal-700" }
+  };
+
   useEffect(() => {
     const interval = setInterval(() => {
       setActiveTestimonial((prev) => (prev + 1) % testimonials.length);
@@ -111,54 +200,33 @@ export default function Home() {
     return () => clearInterval(interval);
   }, [testimonials.length]);
 
-   /*useEffect(() => {
-    // Only show modal if user is not authenticated and hasn't seen it before
-    const hasSeenModal = localStorage.getItem('hasSeenSignupModal');
-    if (status !== 'loading' && !session && !hasSeenModal) {
-      setShowModal(true);
-      localStorage.setItem('hasSeenSignupModal', 'true');
-    }
-  }, [session, status]);
-
-  */
-
   useEffect(() => {
-    // Set page as loaded after initial render
     setPageLoaded(true);
-    
-    // Show modal after slight delay when page is loaded
     const timer = setTimeout(() => {
       const hasSeenModal = localStorage.getItem('hasSeenSignupModal');
       if (!loading && !currentUser && !hasSeenModal) {
         setShowModal(true);
         localStorage.setItem('hasSeenSignupModal', 'true');
       }
-    }, 500); // Small delay to ensure page is fully rendered
-
+    }, 500);
     return () => clearTimeout(timer);
   }, [currentUser, loading]);
 
-  /*
-  // Temporarily force the modal to always show in development
-useEffect(() => {
-  if (process.env.NODE_ENV === 'development') {
-    setShowModal(true);
-  }
-}, []);
-
-*/
-
-  // Auto-scroll to features
   const scrollToFeatures = () => {
     setIsScrolling(true);
     featuresRef.current.scrollIntoView({ behavior: 'smooth' });
     setTimeout(() => setIsScrolling(false), 1000);
   };
 
-  // Auto-scroll to testimonials
   const scrollToTestimonials = () => {
     setIsScrolling(true);
     testimonialsRef.current.scrollIntoView({ behavior: 'smooth' });
+    setTimeout(() => setIsScrolling(false), 1000);
+  };
+
+  const scrollToAiTasks = () => {
+    setIsScrolling(true);
+    aiTasksRef.current.scrollIntoView({ behavior: 'smooth' });
     setTimeout(() => setIsScrolling(false), 1000);
   };
 
@@ -170,166 +238,223 @@ useEffect(() => {
       </Head>
 
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-r from-blue-600 to-blue-800 text-white py-20 md:py-32">
-        <div className="container mx-auto px-6 text-center">
-          <h1 className="text-4xl md:text-6xl font-bold mb-6 animate-fade-in">
+      <section className="relative bg-gradient-to-br from-blue-700 via-blue-600 to-blue-800 text-white py-24 md:py-36 overflow-hidden">
+        {/* Decorative background elements */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute -top-10 -right-10 w-72 h-72 bg-blue-500 opacity-20 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-0 left-0 w-96 h-96 bg-indigo-700 opacity-20 rounded-full blur-3xl"></div>
+        </div>
+
+        <div className="container mx-auto px-6 text-center relative z-10">
+          <div className="inline-flex items-center bg-white/10 border border-white/20 rounded-full px-4 py-2 mb-6 text-sm font-medium backdrop-blur-sm">
+            <span className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></span>
+            85,000+ earners active globally right now
+          </div>
+          <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
             Earn Money On <span className="text-orange-400">Your Terms</span>
           </h1>
-          <p className="text-xl md:text-2xl mb-10 max-w-3xl mx-auto">
-            Complete simple tasks and get paid instantly. Join thousands earning extra income today!
+          <p className="text-xl md:text-2xl mb-4 max-w-3xl mx-auto text-blue-100">
+            Complete AI-powered tasks and get paid instantly — from anywhere in the world.
           </p>
-          <div className="flex flex-col sm:flex-row justify-center gap-4 mb-16">
-            <button 
+          <p className="text-md mb-12 max-w-2xl mx-auto text-blue-200">
+            Data labeling, AI feedback, content review, and more. No experience needed. Join thousands already earning.
+          </p>
+          <div className="flex flex-col sm:flex-row justify-center gap-4 mb-10">
+            <button
+              onClick={scrollToAiTasks}
+              className="bg-orange-500 hover:bg-orange-400 text-white font-bold py-4 px-8 rounded-xl text-lg transition-all transform hover:scale-105 shadow-lg shadow-orange-500/30"
+            >
+              Explore AI Tasks
+            </button>
+            <button
               onClick={scrollToFeatures}
-              className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-4 px-8 rounded-lg text-lg transition-all transform hover:scale-105"
+              className="bg-white/10 hover:bg-white/20 border border-white/30 text-white font-bold py-4 px-8 rounded-xl text-lg transition-all transform hover:scale-105 backdrop-blur-sm"
             >
               How It Works
             </button>
-            <button 
+            <button
               onClick={scrollToTestimonials}
-              className="bg-white hover:bg-gray-100 text-blue-700 font-bold py-4 px-8 rounded-lg text-lg transition-all transform hover:scale-105"
+              className="bg-transparent hover:bg-white/10 border border-white/20 text-white font-semibold py-4 px-8 rounded-xl text-lg transition-all"
             >
-              See Success Stories
+              Success Stories
             </button>
           </div>
-          <div className="animate-bounce mt-10">
-            <FiArrowRight className="inline-block transform rotate-90 text-3xl opacity-70" />
+          <div className="animate-bounce mt-4">
+            <FiArrowRight className="inline-block transform rotate-90 text-3xl opacity-50" />
           </div>
         </div>
-        <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-white to-transparent"></div>
+        <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-white to-transparent"></div>
       </section>
 
       {/* Stats Section */}
       <section className="py-16 bg-white">
         <div className="container mx-auto px-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-            <div className="p-6 bg-blue-50 rounded-xl">
-              <FiDollarSign className="text-4xl text-blue-600 mx-auto mb-4" />
-              <h3 className="text-3xl font-bold text-gray-800">$1.2M+</h3>
-              <p className="text-gray-600">Paid to Members</p>
-            </div>
-            <div className="p-6 bg-orange-50 rounded-xl">
-              <FiUsers className="text-4xl text-orange-600 mx-auto mb-4" />
-              <h3 className="text-3xl font-bold text-gray-800">85K+</h3>
-              <p className="text-gray-600">Active Earners</p>
-            </div>
-            <div className="p-6 bg-green-50 rounded-xl">
-              <FiClock className="text-4xl text-green-600 mx-auto mb-4" />
-              <h3 className="text-3xl font-bold text-gray-800">24/7</h3>
-              <p className="text-gray-600">Task Availability</p>
-            </div>
-            <div className="p-6 bg-purple-50 rounded-xl">
-              <FiTrendingUp className="text-4xl text-purple-600 mx-auto mb-4" />
-              <h3 className="text-3xl font-bold text-gray-800">95%</h3>
-              <p className="text-gray-600">Payment Success Rate</p>
-            </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+            {[
+              { icon: <FiDollarSign className="text-3xl text-blue-600 mx-auto mb-3" />, value: "$1.2M+", label: "Paid to Members", bg: "bg-blue-50" },
+              { icon: <FiUsers className="text-3xl text-orange-600 mx-auto mb-3" />, value: "85K+", label: "Active Earners", bg: "bg-orange-50" },
+              { icon: <FiGlobe className="text-3xl text-green-600 mx-auto mb-3" />, value: "120+", label: "Countries Supported", bg: "bg-green-50" },
+              { icon: <FiTrendingUp className="text-3xl text-purple-600 mx-auto mb-3" />, value: "95%", label: "Payment Success Rate", bg: "bg-purple-50" },
+            ].map((stat, i) => (
+              <div key={i} className={`p-6 ${stat.bg} rounded-2xl border border-gray-100 hover:shadow-md transition-shadow`}>
+                {stat.icon}
+                <h3 className="text-3xl font-bold text-gray-800">{stat.value}</h3>
+                <p className="text-gray-500 text-sm mt-1">{stat.label}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* Features Section */}
-      <section ref={featuresRef} className="py-20 bg-gray-50">
+      {/* AI Tasks Section */}
+      <section ref={aiTasksRef} className="py-24 bg-gray-50">
         <div className="container mx-auto px-6">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-16">
-            How <span className="text-blue-600">TaskEarn</span> Works
-          </h2>
-          
-          <div className="grid md:grid-cols-3 gap-10">
-            <div className="bg-white p-8 rounded-xl shadow-lg hover:shadow-xl transition-shadow">
-              <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mb-6">
-                <span className="text-blue-600 text-2xl font-bold">1</span>
-              </div>
-              <h3 className="text-xl font-bold mb-4">Sign Up Free</h3>
-              <p className="text-gray-600 mb-6">
-                Create your account in under 2 minutes. No credit card required.
-              </p>
-              <ul className="space-y-2">
-                <li className="flex items-center">
-                  <FiCheck className="text-green-500 mr-2" /> Instant approval
-                </li>
-                <li className="flex items-center">
-                  <FiCheck className="text-green-500 mr-2" /> No hidden fees
-                </li>
-              </ul>
-            </div>
+          <div className="text-center mb-16">
+            <span className="inline-block bg-blue-100 text-blue-700 text-sm font-semibold px-4 py-1.5 rounded-full mb-4">Powered by AI</span>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              What Kind of Tasks Will <span className="text-blue-600">You Complete?</span>
+            </h2>
+            <p className="text-gray-500 max-w-2xl mx-auto text-lg">
+              Our tasks are sourced from leading AI companies and research labs. Your contributions directly improve the AI tools millions of people use daily.
+            </p>
+          </div>
 
-            <div className="bg-white p-8 rounded-xl shadow-lg hover:shadow-xl transition-shadow">
-              <div className="bg-orange-100 w-16 h-16 rounded-full flex items-center justify-center mb-6">
-                <span className="text-orange-600 text-2xl font-bold">2</span>
-              </div>
-              <h3 className="text-xl font-bold mb-4">Choose Tasks</h3>
-              <p className="text-gray-600 mb-6">
-                Browse thousands of available tasks that match your skills.
-              </p>
-              <ul className="space-y-2">
-                <li className="flex items-center">
-                  <FiCheck className="text-green-500 mr-2" /> Flexible schedule
-                </li>
-                <li className="flex items-center">
-                  <FiCheck className="text-green-500 mr-2" /> Various categories
-                </li>
-              </ul>
-            </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {aiTaskCategories.map((task, index) => {
+              const colors = colorMap[task.color];
+              return (
+                <div key={index} className={`${colors.bg} border border-gray-100 p-7 rounded-2xl hover:shadow-lg transition-all group`}>
+                  <div className={`${colors.icon} w-14 h-14 rounded-xl flex items-center justify-center mb-5 group-hover:scale-110 transition-transform`}>
+                    {task.icon}
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-800 mb-2">{task.title}</h3>
+                  <p className="text-gray-600 text-sm leading-relaxed mb-4">{task.description}</p>
+                  <span className={`inline-block text-xs font-semibold ${colors.badge} px-3 py-1.5 rounded-full`}>
+                    Avg. Pay: {task.pay}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
 
-            <div className="bg-white p-8 rounded-xl shadow-lg hover:shadow-xl transition-shadow">
-              <div className="bg-green-100 w-16 h-16 rounded-full flex items-center justify-center mb-6">
-                <span className="text-green-600 text-2xl font-bold">3</span>
+          <div className="mt-12 bg-gradient-to-r from-blue-600 to-indigo-700 rounded-2xl p-8 md:p-12 text-white text-center">
+            <h3 className="text-2xl font-bold mb-3">No Technical Skills? No Problem.</h3>
+            <p className="text-blue-100 max-w-xl mx-auto mb-6">
+              Most tasks take 5–30 minutes and require only basic computer skills. We provide guides and tutorials so you can start earning from day one.
+            </p>
+            <button className="bg-white text-blue-700 font-bold py-3 px-8 rounded-xl hover:bg-blue-50 transition-all">
+              Browse All Tasks →
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* How It Works Section */}
+      <section ref={featuresRef} className="py-24 bg-white">
+        <div className="container mx-auto px-6">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold">
+              How <span className="text-blue-600">TaskEarn</span> Works
+            </h2>
+            <p className="text-gray-500 mt-3 max-w-xl mx-auto">Three simple steps between you and your first payout.</p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            {[
+              {
+                step: "1",
+                color: "blue",
+                title: "Sign Up Free",
+                desc: "Create your account in under 2 minutes. No credit card required. Get instant access to available tasks.",
+                perks: ["Instant approval", "No hidden fees", "Available worldwide"]
+              },
+              {
+                step: "2",
+                color: "orange",
+                title: "Choose Tasks",
+                desc: "Browse thousands of AI and general tasks matched to your skills, language, and availability.",
+                perks: ["Flexible schedule", "Multiple categories", "Guided tutorials"]
+              },
+              {
+                step: "3",
+                color: "green",
+                title: "Get Paid",
+                desc: "Earn money for each completed task. Withdraw via M-Pesa, PayPal, bank transfer, and more.",
+                perks: ["Instant payouts", "Secure transfers", "Local currencies"]
+              }
+            ].map((item, i) => (
+              <div key={i} className="bg-gray-50 border border-gray-100 p-8 rounded-2xl hover:shadow-lg transition-shadow relative overflow-hidden">
+                <div className={`absolute top-0 right-0 w-24 h-24 rounded-bl-full opacity-10 ${item.color === 'blue' ? 'bg-blue-400' : item.color === 'orange' ? 'bg-orange-400' : 'bg-green-400'}`}></div>
+                <div className={`w-14 h-14 rounded-xl flex items-center justify-center mb-6 text-2xl font-bold ${item.color === 'blue' ? 'bg-blue-100 text-blue-600' : item.color === 'orange' ? 'bg-orange-100 text-orange-600' : 'bg-green-100 text-green-600'}`}>
+                  {item.step}
+                </div>
+                <h3 className="text-xl font-bold mb-3">{item.title}</h3>
+                <p className="text-gray-600 mb-5 text-sm leading-relaxed">{item.desc}</p>
+                <ul className="space-y-2">
+                  {item.perks.map((perk, j) => (
+                    <li key={j} className="flex items-center text-sm text-gray-700">
+                      <FiCheck className="text-green-500 mr-2 flex-shrink-0" /> {perk}
+                    </li>
+                  ))}
+                </ul>
               </div>
-              <h3 className="text-xl font-bold mb-4">Get Paid</h3>
-              <p className="text-gray-600 mb-6">
-                Earn money for each completed task with multiple payout options.
-              </p>
-              <ul className="space-y-2">
-                <li className="flex items-center">
-                  <FiCheck className="text-green-500 mr-2" /> Instant payouts
-                </li>
-                <li className="flex items-center">
-                  <FiCheck className="text-green-500 mr-2" /> Secure transfers
-                </li>
-              </ul>
-            </div>
+            ))}
           </div>
         </div>
       </section>
 
       {/* Testimonials Section */}
-      <section ref={testimonialsRef} className="py-20 bg-blue-700 text-white">
+      <section ref={testimonialsRef} className="py-24 bg-gradient-to-br from-blue-800 to-indigo-900 text-white">
         <div className="container mx-auto px-6">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-16">
-            Real People, <span className="text-orange-300">Real Earnings</span>
-          </h2>
-          
-          <div className="relative max-w-4xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold">
+              Real People, <span className="text-orange-300">Real Earnings</span>
+            </h2>
+            <p className="text-blue-200 mt-3 max-w-xl mx-auto">From Nairobi to New York — our earners span every corner of the globe.</p>
+          </div>
+
+          <div className="relative max-w-3xl mx-auto">
             {testimonials.map((testimonial, index) => (
-              <div 
+              <div
                 key={testimonial.id}
-                className={`transition-opacity duration-500 ${activeTestimonial === index ? 'opacity-100' : 'opacity-0 absolute top-0 left-0'}`}
+                className={`transition-all duration-500 ${activeTestimonial === index ? 'opacity-100 relative' : 'opacity-0 absolute top-0 left-0 pointer-events-none'}`}
               >
-                <div className="bg-blue-800 p-8 md:p-10 rounded-xl shadow-lg">
-                  <p className="text-xl italic mb-6">&quot;{testimonial.content}&quot;</p>
-                  <div className="flex items-center">
-                    <div className="w-16 h-16 rounded-full bg-blue-600 flex items-center justify-center overflow-hidden">
-                      <img 
-                        src={testimonial.avatar} 
+                <div className="bg-white/10 backdrop-blur-sm border border-white/20 p-8 md:p-10 rounded-2xl shadow-xl">
+                  {/* Earnings badge */}
+                  <div className="flex justify-between items-start mb-6">
+                    <span className="bg-orange-400/20 border border-orange-400/30 text-orange-300 text-sm font-semibold px-3 py-1.5 rounded-full">
+                      {testimonial.earnings}
+                    </span>
+                    <span className="text-blue-200 text-sm">{testimonial.flag} {testimonial.country}</span>
+                  </div>
+                  <p className="text-lg italic text-blue-50 mb-6 leading-relaxed">&quot;{testimonial.content}&quot;</p>
+                  <div className="flex items-center border-t border-white/10 pt-5">
+                    <div className="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center overflow-hidden mr-4 flex-shrink-0">
+                      <img
+                        src={testimonial.avatar}
                         alt={testimonial.name}
                         className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          e.target.parentNode.innerHTML = `<span class="text-white font-bold text-lg">${testimonial.name[0]}</span>`;
+                        }}
                       />
                     </div>
-                    <div className="ml-4">
-                      <h4 className="font-bold text-lg">{testimonial.name}</h4>
-                      <p className="text-blue-200">{testimonial.role}</p>
+                    <div>
+                      <h4 className="font-bold text-white">{testimonial.name}</h4>
+                      <p className="text-blue-300 text-sm">{testimonial.role} · {testimonial.flag} {testimonial.country}</p>
                     </div>
                   </div>
                 </div>
               </div>
             ))}
-            
+
             <div className="flex justify-center mt-8 space-x-2">
               {testimonials.map((_, index) => (
                 <button
                   key={index}
                   onClick={() => setActiveTestimonial(index)}
-                  className={`w-3 h-3 rounded-full ${activeTestimonial === index ? 'bg-orange-400' : 'bg-blue-500'}`}
+                  className={`transition-all rounded-full ${activeTestimonial === index ? 'w-6 h-3 bg-orange-400' : 'w-3 h-3 bg-blue-500 hover:bg-blue-400'}`}
                   aria-label={`Go to testimonial ${index + 1}`}
                 />
               ))}
@@ -338,26 +463,38 @@ useEffect(() => {
         </div>
       </section>
 
+      {/* Trust & Security Strip */}
+      <section className="py-10 bg-gray-900 text-white">
+        <div className="container mx-auto px-6">
+          <div className="flex flex-wrap justify-center items-center gap-8 text-center text-sm text-gray-400">
+            {["🔒 SSL Encrypted Payments", "✅ Verified Task Partners", "🌍 Available in 120+ Countries", "⚡ Payouts within 24 Hours", "🆓 Free to Join — No Hidden Fees"].map((item, i) => (
+              <span key={i} className="font-medium">{item}</span>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-r from-orange-500 to-orange-600 text-white">
+      <section className="py-24 bg-gradient-to-r from-orange-500 to-orange-600 text-white">
         <div className="container mx-auto px-6 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-6">
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">
             Ready to Start Earning?
           </h2>
-          <p className="text-xl mb-10 max-w-2xl mx-auto">
-            Join thousands of members earning money on their own schedule.
+          <p className="text-xl mb-10 max-w-2xl mx-auto text-orange-100">
+            Join thousands of members across the globe earning money on their own schedule — including right here in Kenya.
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <button className="bg-white hover:bg-gray-100 text-orange-600 font-bold py-4 px-8 rounded-lg text-lg transition-all transform hover:scale-105">
+            <button className="bg-white hover:bg-gray-50 text-orange-600 font-bold py-4 px-10 rounded-xl text-lg transition-all transform hover:scale-105 shadow-lg">
               Sign Up Free
             </button>
-            <button className="bg-transparent hover:bg-orange-700 border-2 border-white text-white font-bold py-4 px-8 rounded-lg text-lg transition-all transform hover:scale-105">
-              Learn More
+            <button className="bg-transparent hover:bg-orange-700 border-2 border-white text-white font-bold py-4 px-10 rounded-xl text-lg transition-all transform hover:scale-105">
+              Explore Tasks
             </button>
           </div>
         </div>
       </section>
-       {pageLoaded && showModal && (
+
+      {pageLoaded && showModal && (
         <SignupModal onClose={() => setShowModal(false)} />
       )}
     </Layout>

@@ -22,23 +22,39 @@ function Dashboard() {
     weeklyEarnings: [0, 0, 0, 0, 0, 0, 0],
     categoryBreakdown: {}
   });
+  const [videoStats, setVideoStats] = useState({
+    totalCompleted: 0,
+    totalEarned: 0,
+    recentCompletions: [],
+    todayEarnings: 0,
+    weeklyEarnings: [0, 0, 0, 0, 0, 0, 0],
+    categoryBreakdown: {}
+  });
   const [loading, setLoading] = useState(true);
+
+  // Map numeric videoId -> category key (same keys you used in videoData)
+  const videoIdToCategory = {
+    201: 'product-demo',
+    202: 'advertisement',
+    203: 'educational',
+    204: 'brand-awareness'
+  };
 
   // Fetch survey completion data from Firebase
   const fetchSurveyData = async () => {
     if (!currentUser?.uid) return;
-    
+
     try {
       // Fetch user's survey completions
       const surveyCompletionsRef = ref(database, 'surveyCompletions');
       const userSurveysQuery = query(
-        surveyCompletionsRef, 
-        orderByChild('userId'), 
+        surveyCompletionsRef,
+        orderByChild('userId'),
         equalTo(currentUser.uid)
       );
-      
+
       const snapshot = await get(userSurveysQuery);
-      
+
       if (snapshot.exists()) {
         const completions = [];
         snapshot.forEach((child) => {
@@ -47,19 +63,68 @@ function Dashboard() {
             ...child.val()
           });
         });
-        
+
         // Sort by completion date (most recent first)
         completions.sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt));
-        
+
         // Calculate stats
         const stats = calculateSurveyStats(completions);
         setSurveyStats(stats);
+      } else {
+        setSurveyStats({
+          totalCompleted: 0,
+          totalEarned: 0,
+          recentCompletions: [],
+          todayEarnings: 0,
+          weeklyEarnings: [0, 0, 0, 0, 0, 0, 0],
+          categoryBreakdown: {}
+        });
       }
-      
-      setLoading(false);
     } catch (error) {
       console.error('Error fetching survey data:', error);
-      setLoading(false);
+    }
+  };
+
+  // Fetch video completion data from Firebase (usersweb/{uid}/videos)
+  const fetchVideoData = async () => {
+    if (!currentUser?.uid) return;
+
+    try {
+      const videosRef = ref(database, `usersweb/${currentUser.uid}/videos`);
+      const snapshot = await get(videosRef);
+
+      if (snapshot.exists()) {
+        const raw = snapshot.val();
+        const completions = [];
+
+        // raw is an object keyed by video id or something similar
+        Object.entries(raw).forEach(([key, val]) => {
+          // Only include completed videos
+          if (val && (val.status === 'completed' || val.completedAt)) {
+            completions.push({
+              id: key,
+              ...val
+            });
+          }
+        });
+
+        // Sort by completedAt timestamp desc
+        completions.sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0));
+
+        const stats = calculateVideoStats(completions);
+        setVideoStats(stats);
+      } else {
+        setVideoStats({
+          totalCompleted: 0,
+          totalEarned: 0,
+          recentCompletions: [],
+          todayEarnings: 0,
+          weeklyEarnings: [0, 0, 0, 0, 0, 0, 0],
+          categoryBreakdown: {}
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching video data:', error);
     }
   };
 
@@ -68,23 +133,23 @@ function Dashboard() {
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
-    
+
     let totalEarned = 0;
     let todayEarnings = 0;
     const weeklyEarnings = [0, 0, 0, 0, 0, 0, 0];
     const categoryBreakdown = {};
-    
+
     completions.forEach(completion => {
       const completedDate = new Date(completion.completedAt);
       const points = completion.pointsEarned || 0;
-      
+
       totalEarned += points;
-      
+
       // Today's earnings
       if (completedDate >= today) {
         todayEarnings += points;
       }
-      
+
       // Weekly earnings (last 7 days)
       if (completedDate >= weekAgo) {
         const daysAgo = Math.floor((now - completedDate) / (24 * 60 * 60 * 1000));
@@ -92,7 +157,7 @@ function Dashboard() {
           weeklyEarnings[6 - daysAgo] += points;
         }
       }
-      
+
       // Category breakdown
       const category = completion.category || 'other';
       if (!categoryBreakdown[category]) {
@@ -101,11 +166,60 @@ function Dashboard() {
       categoryBreakdown[category].count++;
       categoryBreakdown[category].earned += points;
     });
-    
+
     return {
       totalCompleted: completions.length,
       totalEarned,
       recentCompletions: completions.slice(0, 5), // Last 5 completions
+      todayEarnings,
+      weeklyEarnings,
+      categoryBreakdown
+    };
+  };
+
+  // Calculate comprehensive video statistics (reward is stored as number e.g. 0.30)
+  const calculateVideoStats = (completions) => {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+    let totalEarned = 0; // currency units (same as reward field)
+    let todayEarnings = 0;
+    const weeklyEarnings = [0, 0, 0, 0, 0, 0, 0];
+    const categoryBreakdown = {};
+
+    completions.forEach(completion => {
+      const completedDate = new Date(completion.completedAt);
+      const reward = Number(completion.reward) || 0;
+
+      totalEarned += reward;
+
+      if (completedDate >= today) {
+        todayEarnings += reward;
+      }
+
+      if (completedDate >= weekAgo) {
+        const daysAgo = Math.floor((now - completedDate) / (24 * 60 * 60 * 1000));
+        if (daysAgo >= 0 && daysAgo < 7) {
+          weeklyEarnings[6 - daysAgo] += reward;
+        }
+      }
+
+      // Determine category: either saved on record or map from videoId
+      const vid = Number(completion.videoId || completion.id);
+      const category = completion.category || videoIdToCategory[vid] || 'general';
+
+      if (!categoryBreakdown[category]) {
+        categoryBreakdown[category] = { count: 0, earned: 0 };
+      }
+      categoryBreakdown[category].count++;
+      categoryBreakdown[category].earned += reward;
+    });
+
+    return {
+      totalCompleted: completions.length,
+      totalEarned,
+      recentCompletions: completions.slice(0, 5),
       todayEarnings,
       weeklyEarnings,
       categoryBreakdown
@@ -119,7 +233,7 @@ function Dashboard() {
     const diffTime = now - completedDate;
     const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-    
+
     let timeAgo;
     if (diffHours < 1) {
       timeAgo = 'Just now';
@@ -130,7 +244,7 @@ function Dashboard() {
     } else {
       timeAgo = `${diffDays} days ago`;
     }
-    
+
     return {
       id: completion.id,
       task: completion.surveyTitle || `${completion.category} Survey`,
@@ -141,8 +255,48 @@ function Dashboard() {
     };
   };
 
+  // Format video activity for display
+  const formatVideoActivity = (video) => {
+    const completedDate = new Date(video.completedAt);
+    const now = new Date();
+    const diffTime = now - completedDate;
+    const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+    let timeAgo;
+    if (diffHours < 1) {
+      timeAgo = 'Just now';
+    } else if (diffHours < 24) {
+      timeAgo = `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    } else if (diffDays === 1) {
+      timeAgo = 'Yesterday';
+    } else {
+      timeAgo = `${diffDays} days ago`;
+    }
+
+    return {
+      id: `video-${video.videoId || video.id}`,
+      task: video.title || 'Video',
+      amount: Number(video.reward) || 0,
+      date: timeAgo,
+      quality: Math.floor(Math.random() * 15) + 85
+    };
+  };
+
+  // Load both survey and video data when user changes
   useEffect(() => {
-    fetchSurveyData();
+    const loadAll = async () => {
+      setLoading(true);
+      await Promise.all([fetchSurveyData(), fetchVideoData()]);
+      setLoading(false);
+    };
+
+    if (currentUser) {
+      loadAll();
+    } else {
+      setLoading(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser]);
 
   useEffect(() => {
@@ -156,27 +310,126 @@ function Dashboard() {
     fetchUserData();
   }, []);
 
-  // Combine real survey data with user profile data
+  // Combine recent completions from surveys + videos (sorted by timestamp)
+  const buildCombinedRecent = () => {
+    const items = [];
+
+    // use original raw items if possible (they contain completedAt timestamps)
+    if (surveyStats.recentCompletions?.length) {
+      surveyStats.recentCompletions.forEach(s => {
+        items.push({
+          id: `survey-${s.id}`,
+          task: s.surveyTitle || `${s.category} Survey`,
+          amount: (s.pointsEarned || 0) / 100,
+          timestamp: s.completedAt ? Number(new Date(s.completedAt)) : 0,
+          type: 'survey',
+          raw: s
+        });
+      });
+    }
+
+    if (videoStats.recentCompletions?.length) {
+      videoStats.recentCompletions.forEach(v => {
+        items.push({
+          id: `video-${v.videoId || v.id}`,
+          task: v.title || 'Video',
+          amount: Number(v.reward) || 0,
+          timestamp: v.completedAt ? Number(v.completedAt) : 0,
+          type: 'video',
+          raw: v
+        });
+      });
+    }
+
+    // Sort descending by timestamp
+    items.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+    // Limit to 5 and format display fields
+    return items.slice(0, 5).map(item => {
+      const now = Date.now();
+      const diffMs = now - (item.timestamp || 0);
+      const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+      let timeAgo;
+      if (!item.timestamp || diffHours < 1) {
+        timeAgo = 'Just now';
+      } else if (diffHours < 24) {
+        timeAgo = `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+      } else if (diffDays === 1) {
+        timeAgo = 'Yesterday';
+      } else {
+        timeAgo = `${diffDays} days ago`;
+      }
+
+      return {
+        id: item.id,
+        task: item.task,
+        amount: item.amount,
+        date: timeAgo,
+        quality: Math.floor(Math.random() * 15) + 85
+      };
+    });
+  };
+
+  const recentActivities = buildCombinedRecent();
+
+  // Combine totals & prepared UI values
+  const surveyCurrencyTotal = (surveyStats.totalEarned || 0) / 100; // surveys stored in points
+  const videoCurrencyTotal = (videoStats.totalEarned || 0); // videos stored in currency (e.g. 0.30)
+  const combinedTotalBalance = surveyCurrencyTotal + videoCurrencyTotal;
+
+  const combinedTodayEarnings = (surveyStats.todayEarnings || 0) / 100 + (videoStats.todayEarnings || 0);
+
+  // combine weekly arrays: convert survey weekly (points) to currency by dividing by 100
+  const combinedWeeklyEarnings = (surveyStats.weeklyEarnings || []).map((pts, idx) => {
+    const surveyVal = (pts || 0) / 100;
+    const videoVal = (videoStats.weeklyEarnings && videoStats.weeklyEarnings[idx]) ? (videoStats.weeklyEarnings[idx] || 0) : 0;
+    return surveyVal + videoVal;
+  });
+
+  // Combined category breakdown (surveys points -> currency)
+  const combinedCategoryBreakdown = {};
+  const sCat = surveyStats.categoryBreakdown || {};
+  const vCat = videoStats.categoryBreakdown || {};
+
+  Object.entries(sCat).forEach(([cat, data]) => {
+    combinedCategoryBreakdown[cat] = {
+      count: data.count || 0,
+      earned: (data.earned || 0) / 100 // convert to currency
+    };
+  });
+
+  Object.entries(vCat).forEach(([cat, data]) => {
+    if (!combinedCategoryBreakdown[cat]) {
+      combinedCategoryBreakdown[cat] = { count: 0, earned: 0 };
+    }
+    combinedCategoryBreakdown[cat].count += (data.count || 0);
+    combinedCategoryBreakdown[cat].earned += (data.earned || 0);
+  });
+
+  // Combine real survey data with user profile data for UI (minimal changes to your original structure)
   const user = {
-    name: userData?.username || 
-          auth.currentUser?.displayName || 
-          auth.currentUser?.email?.split('@')[0] || 
+    name: userData?.username ||
+          userData2?.username ||
+          auth.currentUser?.displayName ||
+          auth.currentUser?.email?.split('@')[0] ||
           'User',
     email: currentUser?.email || '',
     membership: userData?.membership || 'Bronze',
-    nextLevel: userData?.membership === 'Bronze' ? 'Silver' : 
-               userData?.membership === 'Silver' ? 'Gold' : 
+    nextLevel: userData?.membership === 'Bronze' ? 'Silver' :
+               userData?.membership === 'Silver' ? 'Gold' :
                userData?.membership === 'Gold' ? 'Platinum' : null,
     progress: userData?.progress || 0,
-    qualityScore: userData?.qualityScore || 
-                  (surveyStats.totalCompleted > 0 ? Math.floor(Math.random() * 15) + 85 : 0),
-    tasksCompleted: surveyStats.totalCompleted,
-    tasksPending: Math.floor(surveyStats.totalCompleted * 0.1), // Assume 10% pending
-    balance: surveyStats.totalEarned / 100, // Convert points to currency
-    earningsToday: surveyStats.todayEarnings / 100,
-    weeklyEarnings: surveyStats.weeklyEarnings.map(points => points / 100),
-    completionRate: surveyStats.totalCompleted > 0 ? 
-                   Math.floor(((surveyStats.totalCompleted) / (surveyStats.totalCompleted + Math.floor(surveyStats.totalCompleted * 0.1))) * 100) : 0
+    qualityScore: userData?.qualityScore ||
+                  ((surveyStats.totalCompleted + videoStats.totalCompleted) > 0 ? Math.floor(Math.random() * 15) + 85 : 0),
+    tasksCompleted: (surveyStats.totalCompleted || 0) + (videoStats.totalCompleted || 0),
+    tasksPending: Math.floor(((surveyStats.totalCompleted || 0) + (videoStats.totalCompleted || 0)) * 0.1),
+    balance: combinedTotalBalance,
+    earningsToday: combinedTodayEarnings,
+    weeklyEarnings: combinedWeeklyEarnings,
+    completionRate: ((surveyStats.totalCompleted || 0) + (videoStats.totalCompleted || 0)) > 0 ?
+                   Math.floor((((surveyStats.totalCompleted || 0) + (videoStats.totalCompleted || 0)) / (((surveyStats.totalCompleted || 0) + (videoStats.totalCompleted || 0)) + Math.floor(((surveyStats.totalCompleted || 0) + (videoStats.totalCompleted || 0)) * 0.1))) * 100) : 0
   };
 
   const membershipTiers = [
@@ -211,9 +464,6 @@ function Dashboard() {
       recommended: false
     }
   ];
-
-  // Convert recent survey completions to activity format
-  const recentActivities = surveyStats.recentCompletions.map(formatSurveyActivity);
 
   const handleSignOut = async () => {
     try {
@@ -342,7 +592,7 @@ function Dashboard() {
           <div className="bg-white p-6 rounded-lg shadow">
             <h3 className="text-gray-500 mb-2">Earnings Today</h3>
             <p className="text-3xl font-bold">Ksh {user.earningsToday.toFixed(2)}</p>
-            {surveyStats.todayEarnings > 0 ? (
+            { (surveyStats.todayEarnings > 0) || (videoStats.todayEarnings > 0) ? (
               <div className="flex items-center mt-2">
                 <svg className="h-4 w-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
@@ -350,7 +600,7 @@ function Dashboard() {
                 <span className="text-sm text-green-500 ml-1">Active today</span>
               </div>
             ) : (
-              <p className="text-sm text-gray-500 mt-1">Complete surveys to earn</p>
+              <p className="text-sm text-gray-500 mt-1">Complete tasks to earn</p>
             )}
           </div>
 
@@ -388,9 +638,9 @@ function Dashboard() {
                    user.completionRate >= 70 ? 'Average' : 
                    user.completionRate > 0 ? 'Improving' : 'New'}
                 </p>
-                {surveyStats.totalCompleted > 0 && (
+                { (surveyStats.totalCompleted + videoStats.totalCompleted) > 0 && (
                   <p className="text-xs text-blue-600 mt-1">
-                    {surveyStats.totalCompleted} surveys completed
+                    {(surveyStats.totalCompleted + videoStats.totalCompleted)} tasks completed
                   </p>
                 )}
               </div>
@@ -398,10 +648,10 @@ function Dashboard() {
           </div>
         </div>
 
-        {/* Recent Activity */}
+        {/* Recent Activity (surveys + videos combined) */}
         <div className="bg-white rounded-lg shadow overflow-hidden mb-8">
           <div className="p-6 border-b flex justify-between items-center">
-            <h2 className="text-xl font-semibold">Recent Survey Completions</h2>
+            <h2 className="text-xl font-semibold">Recent Activity</h2>
             <button 
               onClick={() => router.push('/tasks')}
               className="text-sm text-blue-600 hover:text-blue-800 font-medium"
@@ -443,12 +693,12 @@ function Dashboard() {
                 <svg className="h-12 w-12 mx-auto mb-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                 </svg>
-                <p>No surveys completed yet</p>
+                <p>No activity yet</p>
                 <button 
                   onClick={() => router.push('/tasks')}
                   className="mt-2 text-blue-600 hover:text-blue-800 font-medium"
                 >
-                  Start your first survey
+                  Start your first task
                 </button>
               </div>
             )}
@@ -485,24 +735,24 @@ function Dashboard() {
           
           <div className="bg-white p-6 rounded-lg shadow">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold">Survey Categories</h2>
+              <h2 className="text-xl font-semibold">Survey & Video Categories</h2>
               <span className="text-sm text-gray-500">Completed</span>
             </div>
             <div className="space-y-4">
-              {Object.keys(surveyStats.categoryBreakdown).length > 0 ? 
-                Object.entries(surveyStats.categoryBreakdown).map(([category, data]) => (
+              {Object.keys(combinedCategoryBreakdown).length > 0 ? 
+                Object.entries(combinedCategoryBreakdown).map(([category, data]) => (
                   <div key={category} className="flex justify-between items-center">
                     <div>
                       <p className="font-medium capitalize">{category.replace('-', ' ')}</p>
                       <p className="text-sm text-gray-500">{data.count} completed</p>
                     </div>
                     <div className="text-right">
-                      <p className="font-bold">Ksh {(data.earned / 100).toFixed(2)}</p>
+                      <p className="font-bold">Ksh {Number(data.earned || 0).toFixed(2)}</p>
                     </div>
                   </div>
                 )) : (
                   <div className="text-center text-gray-500 py-8">
-                    <p>No surveys completed yet</p>
+                    <p>No completions yet</p>
                   </div>
                 )}
             </div>
