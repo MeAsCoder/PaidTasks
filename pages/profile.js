@@ -8,57 +8,110 @@ import { updatePayment, updateUser } from '@/lib/userService';
 import { auth, database } from '../lib/firebase';
 import { ref, onValue } from 'firebase/database';
 
+// ─── Inline SVG icons ─────────────────────────────────────────────────────────
+const Icon = ({ d, size = 18, color = 'currentColor' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+    stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d={d} />
+  </svg>
+);
+const ICONS = {
+  email:    "M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z",
+  user:     "M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z",
+  phone:    "M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 8.81 19.79 19.79 0 01.14 2.18 2 2 0 012.11 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 7.09a16 16 0 006 6l.56-.56a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92z",
+  location: "M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0zM12 10a1 1 0 100-2 1 1 0 000 2z",
+  camera:   "M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2zM12 17a4 4 0 100-8 4 4 0 000 8z",
+  edit:     "M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z",
+  check:    "M20 6L9 17l-5-5",
+  x:        "M18 6L6 18M6 6l12 12",
+  star:     "M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z",
+  zap:      "M13 2L3 14h9l-1 8 10-12h-9l1-8z",
+  calendar: "M3 9h18M3 15h18M8 3v6M16 3v6M3 6a2 2 0 012-2h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2z",
+  lock:     "M19 11H5a2 2 0 00-2 2v7a2 2 0 002 2h14a2 2 0 002-2v-7a2 2 0 00-2-2zM7 11V7a5 5 0 0110 0v4",
+};
+
+// ─── Reusable field styles ────────────────────────────────────────────────────
+const inputStyle = {
+  width: '100%', padding: '10px 14px',
+  border: '1.5px solid #e8e8e8', borderRadius: 10,
+  fontSize: 14, color: '#111', background: '#fafafa',
+  outline: 'none', fontFamily: "'DM Sans', sans-serif",
+  transition: 'border-color 0.2s',
+};
+
+const labelStyle = {
+  display: 'block', fontSize: 12, fontWeight: 700,
+  color: '#888', letterSpacing: '0.06em',
+  textTransform: 'uppercase', marginBottom: 6,
+  fontFamily: "'DM Sans', sans-serif",
+};
+
+const cardStyle = {
+  background: '#fff',
+  border: '1px solid #f0f0f0',
+  borderRadius: 18,
+  overflow: 'hidden',
+  boxShadow: '0 2px 16px rgba(0,0,0,0.05)',
+};
+
+const sectionHeaderStyle = {
+  padding: '18px 24px',
+  borderBottom: '1px solid #f5f5f5',
+  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+};
+
+// ─── Button components ────────────────────────────────────────────────────────
+function OrangeBtn({ onClick, disabled, children }) {
+  return (
+    <button onClick={onClick} disabled={disabled} style={{
+      padding: '8px 20px', borderRadius: 50, background: '#E8541A', color: '#fff',
+      border: 'none', fontSize: 13, fontWeight: 700, cursor: disabled ? 'not-allowed' : 'pointer',
+      opacity: disabled ? 0.6 : 1, fontFamily: "'DM Sans', sans-serif",
+      display: 'inline-flex', alignItems: 'center', gap: 6,
+      transition: 'background 0.18s',
+    }}
+      onMouseEnter={e => { if (!disabled) e.currentTarget.style.background = '#c94412'; }}
+      onMouseLeave={e => { if (!disabled) e.currentTarget.style.background = '#E8541A'; }}
+    >
+      {children}
+    </button>
+  );
+}
+
+function GhostBtn({ onClick, children }) {
+  return (
+    <button onClick={onClick} style={{
+      padding: '8px 18px', borderRadius: 50, background: 'none',
+      border: '1.5px solid #e0e0e0', color: '#555', fontSize: 13, fontWeight: 600,
+      cursor: 'pointer', fontFamily: "'DM Sans', sans-serif",
+      transition: 'border-color 0.18s, color 0.18s',
+    }}
+      onMouseEnter={e => { e.currentTarget.style.borderColor = '#E8541A'; e.currentTarget.style.color = '#E8541A'; }}
+      onMouseLeave={e => { e.currentTarget.style.borderColor = '#e0e0e0'; e.currentTarget.style.color = '#555'; }}
+    >
+      {children}
+    </button>
+  );
+}
+
+// ─── Main Page ────────────────────────────────────────────────────────────────
 export default function ProfilePage() {
-  const { currentUser, userData, updateUserProfile } = useAuth();
+  const { currentUser, userData } = useAuth();
   const router = useRouter();
   const [editMode, setEditMode] = useState(false);
   const [paymentEditMode, setPaymentEditMode] = useState(false);
   const [formData, setFormData] = useState({
-    username : '',
-    bio: '',
-    phone: '',
-    location: '',
-    mpesa: '',
-    paypal: ''
+    username: '', bio: '', phone: '', location: '',
+    balance: 0, photoURL: '', mpesa: '', paypal: '',
   });
-
-  const [paymentData, setPaymentData] = useState({
-    mpesaNumber: '',
-    paypalEmail: ''
-  });
+  const [paymentData, setPaymentData] = useState({ mpesaNumber: '', paypalEmail: '' });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-
-
-  /*
-
-  // Initialize form data when userData loads or changes
-  useEffect(() => {
-    if (userData) {
-      setFormData({
-        username: userData.username || '',
-        bio: userData.bio || '',
-        phone: userData.phone || '',
-        location: userData.location || ''
-      });
-      setPaymentData({
-        mpesaNumber: userData.paymentMethods?.mpesa || '',
-        paypalEmail: userData.paymentMethods?.paypal || ''
-      });
-    }
-  }, [userData]);
-
-
-  */
-
-
-  // Populate form from database
   useEffect(() => {
     const user = auth.currentUser;
     if (!user) return;
-
     const userRef = ref(database, `usersweb/${user.uid}`);
     const unsubscribe = onValue(userRef, (snapshot) => {
       const data = snapshot.val();
@@ -68,385 +121,383 @@ export default function ProfilePage() {
           bio: data.bio || '',
           phone: data.phone || '',
           location: data.location || '',
-          balance : data.balance || 0,
-
-          photoURL : data.photoURL || '',
+          balance: data.balance || 0,
+          photoURL: data.photoURL || '',
           mpesa: data.paymentMethods?.mpesa || '',
-          paypal: data.paymentMethods?.paypal || ''
+          paypal: data.paymentMethods?.paypal || '',
         });
       }
     });
-
     return () => unsubscribe();
   }, []);
 
-  if (!currentUser) {
-    router.push('/auth/login');
-    return null;
-  }
+  if (!currentUser) { router.push('/auth/login'); return null; }
 
-   const handleChange = (e) => {
+  const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const handlePaymentChange = (e) => {
-    setPaymentData({
-      ...paymentData,
-      [e.target.name]: e.target.value
-    });
+    setPaymentData({ ...paymentData, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsLoading(true);
     try {
       await updateUser(formData);
-      alert('Profile updated successfully!');
+      setSuccess('Profile updated successfully!');
+      setEditMode(false);
+      setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
-      console.error(err);
-      alert('Failed to update profile.');
-    }
+      setError('Failed to update profile.');
+      setTimeout(() => setError(''), 3000);
+    } finally { setIsLoading(false); }
   };
-
-
-
 
   const handlePaymentSubmit = async (e) => {
     e.preventDefault();
-    console.log('Submitting payment data:', paymentData);
+    setIsLoading(true);
     try {
       await updatePayment(paymentData);
-      alert('Payment details updated successfully!');
+      setSuccess('Payment details updated!');
+      setPaymentEditMode(false);
+      setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
-      console.error(err);
-      alert('Failed to update payment details.');
-    }
+      setError('Failed to update payment details.');
+      setTimeout(() => setError(''), 3000);
+    } finally { setIsLoading(false); }
   };
 
-
-
   const stats = [
-    { label: 'Tasks Completed', value: userData?.tasksCompleted || 0 },
-    { label: 'Earnings', value: `$${(formData?.balance || 0).toFixed(2)}` },
-    { label: 'Rating', value: userData?.rating ? `${userData.rating}/5` : 'Not rated' },
-    { label: 'Member Since', value: new Date(userData?.createdAt).toLocaleDateString() }
+    { label: 'Tasks Done',    value: userData?.tasksCompleted || 0,                      icon: ICONS.check,    color: '#E8541A' },
+    { label: 'Balance',       value: `$${(formData?.balance || 0).toFixed(2)}`,           icon: ICONS.zap,      color: '#059669' },
+    { label: 'Rating',        value: userData?.rating ? `${userData.rating}/5` : '—',    icon: ICONS.star,     color: '#f59e0b' },
+    { label: 'Member Since',  value: userData?.createdAt ? new Date(userData.createdAt).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }) : '—', icon: ICONS.calendar, color: '#7C3AED' },
   ];
 
   return (
     <Layout>
       <Head>
-        <title>{formData?.name || 'User'} Profile | TaskEarn</title>
-        <meta name="description" content="Your TaskEarn profile" />
+        <title>{formData?.username || 'User'} | EarnFlex</title>
+        <meta name="description" content="Your EarnFlex profile" />
       </Head>
 
-      <div className="min-h-screen bg-gray-50 py-8">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Header with dynamic name */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">
-              {formData.username || 'User'}&apos;s Profile
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Sora:wght@700;800&family=DM+Sans:wght@400;500;600;700&display=swap');
+        * { box-sizing: border-box; }
+        .profile-input:focus { border-color: #E8541A !important; background: #fff !important; }
+        .profile-textarea:focus { border-color: #E8541A !important; background: #fff !important; }
+        .link-orange { color: #E8541A; text-decoration: none; font-weight: 600; font-size: 13px; }
+        .link-orange:hover { text-decoration: underline; }
+        @media (max-width: 1024px) { .profile-grid { grid-template-columns: 1fr !important; } }
+        @media (max-width: 640px) { .stats-grid { grid-template-columns: 1fr 1fr !important; } }
+      `}</style>
+
+      <div style={{ background: '#fafafa', minHeight: '100vh', fontFamily: "'DM Sans', sans-serif" }}>
+
+        {/* ── Hero banner ── */}
+        <div style={{
+          background: 'linear-gradient(135deg, #1a0a00 0%, #2d1200 35%, #0f1a2e 70%, #0a1628 100%)',
+          padding: '48px 24px 80px',
+          position: 'relative', overflow: 'hidden',
+        }}>
+          <div style={{ position: 'absolute', top: -40, right: -40, width: 260, height: 260, background: 'radial-gradient(circle, rgba(232,84,26,0.18) 0%, transparent 70%)', borderRadius: '50%', pointerEvents: 'none' }} />
+          <div style={{ maxWidth: 1100, margin: '0 auto', position: 'relative', zIndex: 1 }}>
+            <p style={{ color: '#E8541A', fontSize: 11, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 8, fontFamily: "'DM Sans', sans-serif" }}>My Account</p>
+            <h1 style={{ fontFamily: "'Sora', sans-serif", fontSize: 32, fontWeight: 800, color: '#fff', letterSpacing: '-0.5px', margin: 0 }}>
+              {formData.username || 'Your'}&apos;s Profile
             </h1>
           </div>
+        </div>
 
-          {/* Success message */}
+        {/* ── Content ── */}
+        <div style={{ maxWidth: 1100, margin: '-48px auto 0', padding: '0 24px 60px', position: 'relative', zIndex: 2 }}>
+
+          {/* Alerts */}
           {success && (
-            <div className="mb-4 p-3 bg-green-50 text-green-700 rounded-md text-sm">
-              {success}
+            <div style={{ marginBottom: 16, padding: '12px 18px', background: '#ecfdf5', border: '1px solid #bbf7d0', borderRadius: 12, color: '#065f46', fontSize: 14, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Icon d={ICONS.check} size={16} color="#059669" /> {success}
             </div>
           )}
-
-          {/* Error message */}
           {error && (
-            <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-md text-sm">
-              {error}
+            <div style={{ marginBottom: 16, padding: '12px 18px', background: '#fff7ed', border: '1px solid rgba(232,84,26,0.3)', borderRadius: 12, color: '#92400e', fontSize: 14, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Icon d={ICONS.x} size={16} color="#E8541A" /> {error}
             </div>
           )}
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Left Column - Profile Card */}
-            <div className="lg:col-span-1">
-              <div className="bg-white shadow rounded-lg overflow-hidden">
-                <div className="bg-gradient-to-r from-blue-600 to-blue-800 h-32"></div>
-                <div className="px-6 py-4 -mt-16 relative">
-                  <div className="flex justify-center">
-                    <div className="relative">
+          <div className="profile-grid" style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: 24 }}>
+
+            {/* ── Left Column ── */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+
+              {/* Profile card */}
+              <div style={cardStyle}>
+                {/* Gradient header strip */}
+                <div style={{ height: 80, background: 'linear-gradient(135deg, #fef3ee 0%, #fce8d8 40%, #dbeeff 100%)' }} />
+
+                <div style={{ padding: '0 24px 24px', marginTop: -48 }}>
+                  {/* Avatar */}
+                  <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
+                    <div style={{ position: 'relative' }}>
                       <img
-                        className="h-32 w-32 rounded-full border-4 border-white object-cover"
                         src={formData?.photoURL || '/default-avatar.png'}
                         alt="Profile"
+                        style={{ width: 88, height: 88, borderRadius: '50%', border: '4px solid #fff', objectFit: 'cover', boxShadow: '0 4px 16px rgba(0,0,0,0.12)' }}
                       />
                       {editMode && (
-                        <button className="absolute bottom-0 right-0 bg-blue-600 text-white p-2 rounded-full hover:bg-blue-700">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                          </svg>
+                        <button style={{ position: 'absolute', bottom: 0, right: 0, width: 28, height: 28, borderRadius: '50%', background: '#E8541A', border: '2px solid #fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                          <Icon d={ICONS.camera} size={13} color="#fff" />
                         </button>
                       )}
                     </div>
                   </div>
 
-                  <div className="mt-4 text-center">
+                  {/* Name */}
+                  <div style={{ textAlign: 'center', marginBottom: 20 }}>
                     {editMode ? (
                       <input
-                        type="text"
-                        name="name"
-                        value={formData.username}
-                        onChange={handleChange}
-                        className="text-xl font-bold text-center w-full border-b border-gray-300 focus:border-blue-500 focus:outline-none"
+                        type="text" name="username"
+                        value={formData.username} onChange={handleChange}
+                        className="profile-input"
+                        style={{ ...inputStyle, textAlign: 'center', fontWeight: 700, fontSize: 16 }}
                       />
                     ) : (
-                      <h2 className="text-xl font-bold text-gray-900">{formData?.username || 'Your Name'}</h2>
+                      <h2 style={{ fontFamily: "'Sora', sans-serif", fontSize: 18, fontWeight: 800, color: '#111', margin: '0 0 4px' }}>
+                        {formData?.username || 'Your Name'}
+                      </h2>
                     )}
-                    <p className="text-sm text-gray-500 mt-1">
+                    <span style={{ fontSize: 12, fontWeight: 700, background: '#fff7ed', color: '#E8541A', border: '1px solid rgba(232,84,26,0.25)', padding: '3px 10px', borderRadius: 20 }}>
                       {userData?.membership || 'Basic'} Member
-                    </p>
+                    </span>
                   </div>
 
-                  <div className="mt-6">
-                    <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                      Account Information
-                    </h3>
-                    <div className="mt-2 space-y-2">
-                      <div className="flex items-center">
-                        <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                        </svg>
-                        <span className="ml-2 text-sm text-gray-600">{currentUser.email}</span>
-                      </div>
-                      <div className="flex items-center">
-                        <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                        </svg>
-                        <span className="ml-2 text-sm text-gray-600">
-                          Joined {new Date(userData?.createdAt).toLocaleDateString()}
-                        </span>
-                      </div>
+                  {/* Account info */}
+                  <div style={{ borderTop: '1px solid #f5f5f5', paddingTop: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    <p style={{ fontSize: 10, fontWeight: 700, color: '#bbb', letterSpacing: '0.1em', textTransform: 'uppercase', margin: '0 0 4px' }}>Account Info</p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <Icon d={ICONS.email} size={15} color="#E8541A" />
+                      <span style={{ fontSize: 13, color: '#555' }}>{currentUser.email}</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <Icon d={ICONS.calendar} size={15} color="#E8541A" />
+                      <span style={{ fontSize: 13, color: '#555' }}>
+                        Joined {userData?.createdAt ? new Date(userData.createdAt).toLocaleDateString() : '—'}
+                      </span>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Stats */}
-              <div className="mt-6 bg-white shadow rounded-lg p-6">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Your Stats</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  {stats.map((stat, index) => (
-                    <div key={index} className="bg-gray-50 p-3 rounded-lg">
-                      <p className="text-xs font-medium text-gray-500">{stat.label}</p>
-                      <p className="text-lg font-semibold text-gray-900">{stat.value}</p>
+              {/* Stats card */}
+              <div style={cardStyle}>
+                <div style={{ padding: '18px 24px 6px' }}>
+                  <h3 style={{ fontFamily: "'Sora', sans-serif", fontSize: 15, fontWeight: 800, color: '#111', margin: '0 0 16px' }}>Your Stats</h3>
+                </div>
+                <div className="stats-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, background: '#f5f5f5' }}>
+                  {stats.map((stat, i) => (
+                    <div key={i} style={{ background: '#fff', padding: '16px 18px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                        <Icon d={stat.icon} size={13} color={stat.color} />
+                        <span style={{ fontSize: 11, fontWeight: 600, color: '#bbb', letterSpacing: '0.05em', textTransform: 'uppercase' }}>{stat.label}</span>
+                      </div>
+                      <p style={{ fontFamily: "'Sora', sans-serif", fontSize: 20, fontWeight: 800, color: '#111', margin: 0 }}>{stat.value}</p>
                     </div>
                   ))}
                 </div>
               </div>
+
             </div>
 
-            {/* Right Column - Profile Details */}
-            <div className="lg:col-span-2 space-y-6">
+            {/* ── Right Column ── */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+
               {/* Profile Information */}
-              <div className="bg-white shadow rounded-lg overflow-hidden">
-                <div className="px-6 py-4 border-b border-gray-200">
-                  <div className="flex justify-between items-center">
-                    <h2 className="text-lg font-medium text-gray-900">Profile Information</h2>
-                    {editMode ? (
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => setEditMode(false)}
-                          className="px-3 py-1 text-sm text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          onClick={handleSubmit}
-                          disabled={isLoading}
-                          className="px-3 py-1 text-sm text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50"
-                        >
-                          {isLoading ? 'Saving...' : 'Save Changes'}
-                        </button>
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => setEditMode(true)}
-                        className="px-3 py-1 text-sm text-white bg-blue-600 rounded-md hover:bg-blue-700"
-                      >
-                        Edit Profile
-                      </button>
-                    )}
-                  </div>
+              <div style={cardStyle}>
+                <div style={sectionHeaderStyle}>
+                  <h2 style={{ fontFamily: "'Sora', sans-serif", fontSize: 16, fontWeight: 800, color: '#111', margin: 0 }}>Profile Information</h2>
+                  {editMode ? (
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <GhostBtn onClick={() => setEditMode(false)}>Cancel</GhostBtn>
+                      <OrangeBtn onClick={handleSubmit} disabled={isLoading}>
+                        <Icon d={ICONS.check} size={13} color="#fff" />
+                        {isLoading ? 'Saving…' : 'Save Changes'}
+                      </OrangeBtn>
+                    </div>
+                  ) : (
+                    <OrangeBtn onClick={() => setEditMode(true)}>
+                      <Icon d={ICONS.edit} size={13} color="#fff" />
+                      Edit Profile
+                    </OrangeBtn>
+                  )}
                 </div>
 
-                <div className="px-6 py-4">
-                  <div className="space-y-6">
+                <div style={{ padding: '24px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+
+                    {/* Bio */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">About</label>
+                      <label style={labelStyle}>About</label>
                       {editMode ? (
                         <textarea
-                          name="bio"
-                          rows="3"
-                          value={formData.bio}
-                          onChange={handleChange}
-                          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                          name="bio" rows={3} value={formData.bio} onChange={handleChange}
+                          className="profile-textarea"
+                          style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.6 }}
+                          placeholder="Tell us a bit about yourself…"
                         />
                       ) : (
-                        <p className="mt-1 text-sm text-gray-900">
+                        <p style={{ fontSize: 14, color: formData?.bio ? '#444' : '#bbb', lineHeight: 1.7, margin: 0 }}>
                           {formData?.bio || 'No bio added yet.'}
                         </p>
                       )}
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Phone + Location */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700">Phone</label>
+                        <label style={labelStyle}>Phone</label>
                         {editMode ? (
-                          <input
-                            type="tel"
-                            name="phone"
-                            value={formData.phone}
-                            onChange={handleChange}
-                            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                          />
+                          <input type="tel" name="phone" value={formData.phone} onChange={handleChange}
+                            className="profile-input" style={inputStyle} placeholder="+254 7XX XXX XXX" />
                         ) : (
-                          <p className="mt-1 text-sm text-gray-900">
-                            {formData?.phone || 'Not provided'}
-                          </p>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <Icon d={ICONS.phone} size={14} color="#E8541A" />
+                            <span style={{ fontSize: 14, color: formData?.phone ? '#444' : '#bbb' }}>{formData?.phone || 'Not provided'}</span>
+                          </div>
                         )}
                       </div>
-
                       <div>
-                        <label className="block text-sm font-medium text-gray-700">Location</label>
+                        <label style={labelStyle}>Location</label>
                         {editMode ? (
-                          <input
-                            type="text"
-                            name="location"
-                            value={formData.location}
-                            onChange={handleChange}
-                            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                          />
+                          <input type="text" name="location" value={formData.location} onChange={handleChange}
+                            className="profile-input" style={inputStyle} placeholder="City, Country" />
                         ) : (
-                          <p className="mt-1 text-sm text-gray-900">
-                            {formData?.location || 'Not specified'}
-                          </p>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <Icon d={ICONS.location} size={14} color="#E8541A" />
+                            <span style={{ fontSize: 14, color: formData?.location ? '#444' : '#bbb' }}>{formData?.location || 'Not specified'}</span>
+                          </div>
                         )}
                       </div>
                     </div>
 
+                    {/* Membership */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">Membership Level</label>
-                      <div className="mt-1 flex items-center">
-                        <span className="px-2 py-1 text-xs font-semibold bg-blue-100 text-blue-800 rounded-full">
+                      <label style={labelStyle}>Membership Level</label>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <span style={{ fontSize: 12, fontWeight: 700, background: '#fff7ed', color: '#E8541A', border: '1px solid rgba(232,84,26,0.25)', padding: '4px 12px', borderRadius: 20 }}>
                           {userData?.membership || 'Basic'}
                         </span>
-                        <Link href="/membership" className="ml-2 text-sm text-blue-600 hover:text-blue-800">
-                          Upgrade
-                        </Link>
+                        <Link href="/membership" className="link-orange">Upgrade →</Link>
                       </div>
                     </div>
+
                   </div>
                 </div>
               </div>
 
-              {/* Payment Methods Section */}
-              <div className="bg-white shadow rounded-lg overflow-hidden">
-                <div className="px-6 py-4 border-b border-gray-200">
-                  <div className="flex justify-between items-center">
-                    <h2 className="text-lg font-medium text-gray-900">Payment Methods</h2>
-                    {paymentEditMode ? (
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => setPaymentEditMode(false)}
-                          className="px-3 py-1 text-sm text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          onClick={handlePaymentSubmit}
-                          disabled={isLoading}
-                          className="px-3 py-1 text-sm text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50"
-                        >
-                          {isLoading ? 'Saving...' : 'Save Payment Methods'}
-                        </button>
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => setPaymentEditMode(true)}
-                        className="px-3 py-1 text-sm text-white bg-blue-600 rounded-md hover:bg-blue-700"
-                      >
-                        Edit Payment Methods
-                      </button>
-                    )}
-                  </div>
+              {/* Payment Methods */}
+              <div style={cardStyle}>
+                <div style={sectionHeaderStyle}>
+                  <h2 style={{ fontFamily: "'Sora', sans-serif", fontSize: 16, fontWeight: 800, color: '#111', margin: 0 }}>Payment Methods</h2>
+                  {paymentEditMode ? (
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <GhostBtn onClick={() => setPaymentEditMode(false)}>Cancel</GhostBtn>
+                      <OrangeBtn onClick={handlePaymentSubmit} disabled={isLoading}>
+                        <Icon d={ICONS.check} size={13} color="#fff" />
+                        {isLoading ? 'Saving…' : 'Save'}
+                      </OrangeBtn>
+                    </div>
+                  ) : (
+                    <OrangeBtn onClick={() => setPaymentEditMode(true)}>
+                      <Icon d={ICONS.edit} size={13} color="#fff" />
+                      Edit
+                    </OrangeBtn>
+                  )}
                 </div>
 
-                <div className="px-6 py-4 space-y-4">
+                <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: 20 }}>
+
+                  {/* M-Pesa */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">M-Pesa Number</label>
+                    <label style={labelStyle}>M-Pesa Number</label>
                     {paymentEditMode ? (
-                      <div className="mt-1 flex rounded-md shadow-sm">
-                        <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">
+                      <div style={{ display: 'flex', borderRadius: 10, border: '1.5px solid #e8e8e8', overflow: 'hidden', background: '#fafafa' }}>
+                        <span style={{ padding: '10px 14px', background: '#f5f5f5', borderRight: '1.5px solid #e8e8e8', fontSize: 13, fontWeight: 600, color: '#888', whiteSpace: 'nowrap' }}>
                           +254
                         </span>
                         <input
-                          type="tel"
-                          name="mpesaNumber"
-                          value={paymentData.mpesaNumber}
-                          onChange={handlePaymentChange}
+                          type="tel" name="mpesaNumber"
+                          value={paymentData.mpesaNumber} onChange={handlePaymentChange}
                           placeholder="7XX XXX XXX"
-                          className="focus:ring-blue-500 focus:border-blue-500 flex-1 block w-full rounded-none rounded-r-md sm:text-sm border-gray-300"
+                          className="profile-input"
+                          style={{ ...inputStyle, border: 'none', borderRadius: 0, background: 'transparent', flex: 1 }}
                         />
                       </div>
                     ) : (
-                      <p className="mt-1 text-sm text-gray-900">
-
-                        {formData.mpesa || 'Not Set'}
-                      </p>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ fontSize: 18 }}>📱</span>
+                        <span style={{ fontSize: 14, color: formData?.mpesa ? '#444' : '#bbb', fontWeight: formData?.mpesa ? 600 : 400 }}>
+                          {formData.mpesa || 'Not set'}
+                        </span>
+                      </div>
                     )}
                   </div>
 
+                  {/* PayPal */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">PayPal Email</label>
+                    <label style={labelStyle}>PayPal Email</label>
                     {paymentEditMode ? (
                       <input
-                        type="email"
-                        name="paypalEmail"
-                        value={paymentData.paypalEmail}
-                        onChange={handlePaymentChange}
-                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                        type="email" name="paypalEmail"
+                        value={paymentData.paypalEmail} onChange={handlePaymentChange}
+                        className="profile-input"
+                        style={inputStyle} placeholder="you@example.com"
                       />
                     ) : (
-                      <p className="mt-1 text-sm text-gray-900">
-                        {formData.paypal || 'Not set'}
-                      </p>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ fontSize: 18 }}>💳</span>
+                        <span style={{ fontSize: 14, color: formData?.paypal ? '#444' : '#bbb', fontWeight: formData?.paypal ? 600 : 400 }}>
+                          {formData.paypal || 'Not set'}
+                        </span>
+                      </div>
                     )}
                   </div>
+
                 </div>
               </div>
 
               {/* Account Settings */}
-              <div className="bg-white shadow rounded-lg overflow-hidden">
-                <div className="px-6 py-4 border-b border-gray-200">
-                  <h2 className="text-lg font-medium text-gray-900">Account Settings</h2>
+              <div style={cardStyle}>
+                <div style={{ padding: '18px 24px', borderBottom: '1px solid #f5f5f5' }}>
+                  <h2 style={{ fontFamily: "'Sora', sans-serif", fontSize: 16, fontWeight: 800, color: '#111', margin: 0 }}>Account Settings</h2>
                 </div>
-                <div className="px-6 py-4 space-y-4">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <h3 className="text-sm font-medium text-gray-900">Email Address</h3>
-                      <p className="text-sm text-gray-500">{currentUser.email}</p>
+                <div style={{ padding: '8px 0' }}>
+                  {[
+                    { label: 'Email Address', value: currentUser.email, icon: ICONS.email },
+                    { label: 'Password',      value: '••••••••••',       icon: ICONS.lock  },
+                  ].map((item, i) => (
+                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 24px', borderBottom: i === 0 ? '1px solid #f5f5f5' : 'none' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <div style={{ width: 34, height: 34, borderRadius: 10, background: '#fff7ed', border: '1px solid rgba(232,84,26,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <Icon d={item.icon} size={15} color="#E8541A" />
+                        </div>
+                        <div>
+                          <p style={{ fontSize: 13, fontWeight: 700, color: '#111', margin: 0 }}>{item.label}</p>
+                          <p style={{ fontSize: 12, color: '#aaa', margin: 0 }}>{item.value}</p>
+                        </div>
+                      </div>
+                      <button style={{ fontSize: 13, fontWeight: 600, color: '#E8541A', background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}
+                        onMouseEnter={e => e.currentTarget.style.textDecoration = 'underline'}
+                        onMouseLeave={e => e.currentTarget.style.textDecoration = 'none'}
+                      >
+                        Change
+                      </button>
                     </div>
-                    <button className="text-sm text-blue-600 hover:text-blue-800">
-                      Change
-                    </button>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <h3 className="text-sm font-medium text-gray-900">Password</h3>
-                      <p className="text-sm text-gray-500">••••••••</p>
-                    </div>
-                    <button className="text-sm text-blue-600 hover:text-blue-800">
-                      Change
-                    </button>
-                  </div>
+                  ))}
                 </div>
               </div>
+
             </div>
           </div>
         </div>

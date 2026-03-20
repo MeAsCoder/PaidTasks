@@ -1,328 +1,238 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/router'
 import Layout from '../../components/Layout'
-import { ref, set, update, get } from "firebase/database";
-import { FiCheck, FiClock, FiArrowLeft } from 'react-icons/fi'
+import { FiCheck, FiClock, FiLock, FiArrowLeft, FiDollarSign, FiPlay, FiCheckCircle } from 'react-icons/fi'
+import { ref, update } from 'firebase/database'
 import { database } from '@/lib/firebase'
 import { useAuth } from '@/context/AuthContext'
+import { creditEarnings } from '@/lib/earningsService'
+
+// ─── Video data ───────────────────────────────────────────────────────────────
+const videoData = {
+  'product-demo': {
+    id: 201, title: "Watch Product Demo", rewardUsd: 2.50,
+    description: "Watch this demonstration of our latest product features and capabilities.",
+    duration: 120,
+    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+  },
+  'advertisement': {
+    id: 202, title: "View Advertisement", rewardUsd: 2.00,
+    description: "View this promotional content from our advertising partners.",
+    duration: 60,
+    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
+  },
+  'educational': {
+    id: 203, title: "Educational Content", rewardUsd: 4.50,
+    description: "Learn something new with this informative educational video.",
+    duration: 90,
+    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+  },
+  'brand-awareness': {
+    id: 204, title: "Brand Awareness Video", rewardUsd: 6.00,
+    description: "This video helps build recognition for our partner brands.",
+    duration: 75,
+    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
+  },
+  'breaking-habits': {
+    id: 205, title: "Breaking Habits Video", rewardUsd: 3.00,
+    description: "This video helps build awareness on breaking bad habits.",
+    duration: 180,
+    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4",
+  },
+};
+
+const formatUsd = (n) => `$${Number(n).toFixed(2)}`;
+const REQUIRED_PCT = 30; // must watch 30% to qualify
 
 const VideoPage = () => {
-  const router = useRouter()
-  const { videoId } = router.query
-  const { currentUser } = useAuth()
-  const videoRef = useRef(null)
-  const [hasWatched, setHasWatched] = useState(false)
-  const [timeWatched, setTimeWatched] = useState(0)
-  const [videoDuration, setVideoDuration] = useState(0)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [categoryState, setCategoryState] = useState({
-    isCompleted: false,
-    cooldownEnd: null
-  })
-  const [videoLoaded, setVideoLoaded] = useState(false)
-  
-  // Debug state to track issues
-  const [debugInfo, setDebugInfo] = useState({
-    lastTimeUpdate: 0,
-    calculatedProgress: 0,
-    shouldEnable: false
-  })
+  const router = useRouter();
+  const { videoId } = router.query;
+  const { currentUser } = useAuth();
+  const videoRef = useRef(null);
 
-  // Updated video data with working video URLs and reasonable durations
-  const videoData = {
-    'product-demo': {
-      id: 201,
-      title: "Watch Product Demo",
-      reward: 0.30,
-      description: "Watch this demonstration of our latest product features and capabilities.",
-      duration: 120, // 2 minutes
-      videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
-      thumbnail: "https://sample-videos.com/img/Sample-jpg-image-500kb.jpg"
-    },
-    'advertisement': {
-      id: 202,
-      title: "View Advertisement",
-      reward: 0.75,
-      description: "View this promotional content from our advertising partners.",
-      duration: 60, // 1 minute
-      videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
-      thumbnail: "https://sample-videos.com/img/Sample-jpg-image-1mb.jpg"
-    },
-    'educational': {
-      id: 203,
-      title: "Educational Content",
-      reward: 0.50,
-      description: "Learn something new with this informative educational video.",
-      duration: 90, // 1.5 minutes
-      videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
-      thumbnail: "https://sample-videos.com/img/Sample-jpg-image-1.5mb.jpg"
-    },
-    'brand-awareness': {
-      id: 204,
-      title: "Brand Awareness Video",
-      reward: 0.60,
-      description: "This video helps build recognition for our partner brands.",
-      duration: 75, // 1.25 minutes
-      videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
-      thumbnail: "https://sample-videos.com/img/Sample-jpg-image-2mb.jpg"
-    },
-    'ted-talk': {
-      id: 205,
-      title: "Breaking Bad Habits",
-      reward: 0.80,
-      description: "This video helps build awareness on breaking bad habits.",
-      duration: 180, // 3 minutes
-      videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4",
-      thumbnail: "https://sample-videos.com/img/Sample-jpg-image-2mb.jpg"
-    }
-  }
+  const currentVideo = videoData[videoId] || videoData['product-demo'];
 
-  const currentVideo = videoData[videoId] || videoData['product-demo']
+  const [timeWatched,    setTimeWatched]    = useState(0);
+  const [videoDuration,  setVideoDuration]  = useState(0);
+  const [videoLoaded,    setVideoLoaded]    = useState(false);
+  const [hasQualified,   setHasQualified]   = useState(false);
+  const [isSubmitting,   setIsSubmitting]   = useState(false);
+  const [categoryState,  setCategoryState]  = useState({ isCompleted: false, cooldownEnd: null });
 
-  // Enhanced progress check with better debugging
+  // Load localStorage state
   useEffect(() => {
-    const actualDuration = videoDuration || currentVideo.duration
-    const requiredWatchTime = actualDuration * 0.3
-    const calculatedProgress = actualDuration > 0 ? (timeWatched / actualDuration) * 100 : 0
-    const shouldEnable = timeWatched >= requiredWatchTime && actualDuration > 0
-    
-    // Update debug info
-    setDebugInfo({
-      lastTimeUpdate: timeWatched,
-      calculatedProgress,
-      shouldEnable
-    })
-    
-    console.log('=== PROGRESS CHECK DEBUG ===')
-    console.log('Time watched:', timeWatched.toFixed(2))
-    console.log('Actual duration:', actualDuration.toFixed(2))
-    console.log('Required watch time (30%):', requiredWatchTime.toFixed(2))
-    console.log('Progress percentage:', calculatedProgress.toFixed(1) + '%')
-    console.log('Should enable button:', shouldEnable)
-    console.log('Current hasWatched state:', hasWatched)
-    console.log('Category state completed:', categoryState.isCompleted)
-    console.log('=== END DEBUG ===')
-    
-    if (shouldEnable) {
-      console.log('✅ 30% threshold reached - enabling submit button')
-      setHasWatched(true)
-    } else {
-      console.log('❌ 30% threshold not reached yet')
-      setHasWatched(false)
-    }
-  }, [timeWatched, videoDuration, currentVideo.duration])
+    if (!videoId) return;
+    const saved =
+      JSON.parse(localStorage.getItem(`surveyCategory-${videoId}`)) ||
+      JSON.parse(localStorage.getItem(`task-${currentVideo.id}`)) ||
+      { isCompleted: false, cooldownEnd: null };
+    setCategoryState(saved);
+  }, [videoId, currentVideo.id]);
 
-  // Load state from localStorage with better error handling
+  // Cooldown ticker
   useEffect(() => {
-    if (typeof window !== 'undefined' && videoId && currentVideo.id) {
-      try {
-        const savedState =
-          JSON.parse(localStorage.getItem(`surveyCategory-${videoId}`)) ||
-          JSON.parse(localStorage.getItem(`task-${currentVideo.id}`)) || {
-            isCompleted: false,
-            cooldownEnd: null
-          }
-        console.log('Loaded category state:', savedState)
-        setCategoryState(savedState)
-      } catch (error) {
-        console.error('Error loading saved state:', error)
-        setCategoryState({ isCompleted: false, cooldownEnd: null })
-      }
-    }
-  }, [videoId, currentVideo.id])
-
-  // Cooldown timer
-  useEffect(() => {
-    if (!categoryState.cooldownEnd) return
-
-    const timer = setInterval(() => {
+    if (!categoryState.cooldownEnd) return;
+    const t = setInterval(() => {
       if (Date.now() >= categoryState.cooldownEnd) {
-        const newState = { isCompleted: false, cooldownEnd: null }
-        setCategoryState(newState)
-        if (typeof window !== 'undefined') {
-          localStorage.setItem(`surveyCategory-${videoId}`, JSON.stringify(newState))
-          localStorage.setItem(`task-${currentVideo.id}`, JSON.stringify(newState))
-        }
+        const s = { isCompleted: false, cooldownEnd: null };
+        setCategoryState(s);
+        localStorage.setItem(`surveyCategory-${videoId}`, JSON.stringify(s));
+        localStorage.setItem(`task-${currentVideo.id}`, JSON.stringify(s));
       }
-    }, 1000)
+    }, 1000);
+    return () => clearInterval(t);
+  }, [categoryState.cooldownEnd, videoId, currentVideo.id]);
 
-    return () => clearInterval(timer)
-  }, [categoryState.cooldownEnd, videoId, currentVideo.id])
+  // Qualification check
+  useEffect(() => {
+    const duration = videoDuration || currentVideo.duration;
+    const required = duration * (REQUIRED_PCT / 100);
+    setHasQualified(timeWatched >= required && duration > 0);
+  }, [timeWatched, videoDuration, currentVideo.duration]);
 
-  // Handle video metadata loaded
   const handleLoadedMetadata = () => {
     if (videoRef.current) {
-      const duration = videoRef.current.duration
-      console.log('Video metadata loaded - Duration:', duration)
-      setVideoDuration(duration)
-      setVideoLoaded(true)
+      setVideoDuration(videoRef.current.duration);
+      setVideoLoaded(true);
     }
-  }
+  };
 
-  // Enhanced time update handler
   const handleTimeUpdate = (e) => {
-    const currentTime = e.target.currentTime
-    const duration = e.target.duration || videoDuration || currentVideo.duration
-    
-    // Ensure we have valid values
-    if (isNaN(currentTime) || currentTime < 0) {
-      console.warn('Invalid currentTime:', currentTime)
-      return
-    }
-    
-    setTimeWatched(currentTime)
-    
-    console.log('Time update - Current:', currentTime.toFixed(1), 'Duration:', duration.toFixed(1))
-
-    // Update progress in Firebase if user is logged in
-    if (currentUser && duration > 0) {
-      const progress = Math.min(100, Math.floor((currentTime / duration) * 100))
+    const t = e.target.currentTime;
+    if (isNaN(t) || t < 0) return;
+    setTimeWatched(t);
+    // Track progress in Firebase (analytics only)
+    if (currentUser) {
+      const dur = e.target.duration || videoDuration || currentVideo.duration;
+      const pct = dur > 0 ? Math.min(100, Math.floor((t / dur) * 100)) : 0;
       update(ref(database, `usersweb/${currentUser.uid}/videos/${currentVideo.id}`), {
-        lastWatched: Date.now(),
-        progress: progress
-      }).catch(error => {
-        console.error('Firebase update error:', error)
-      })
+        lastWatched: Date.now(), progress: pct,
+      }).catch(() => {});
     }
-  }
+  };
 
-  // Handle video ended
-  const handleVideoEnded = () => {
-    console.log('🏁 Video ended - enabling submit button')
-    setHasWatched(true)
-  }
+  const handleVideoEnded = () => setHasQualified(true);
 
-  // Enhanced submit handler with better error handling
+  // ── Submit via earningsService ─────────────────────────────────────────────
   const handleSubmit = async () => {
-    console.log('🔘 Submit button clicked')
-    console.log('hasWatched:', hasWatched)
-    console.log('categoryState.isCompleted:', categoryState.isCompleted)
-    console.log('isSubmitting:', isSubmitting)
-    
-    // Check if submission should be blocked
-    if (!hasWatched) {
-      console.log('❌ Submission blocked - hasWatched is false')
-      alert('Please watch at least 30% of the video to submit.')
-      return
-    }
-    
-    if (categoryState.isCompleted) {
-      console.log('❌ Submission blocked - task already completed')
-      alert('This task has already been completed.')
-      return
-    }
-    
-    if (isSubmitting) {
-      console.log('❌ Submission blocked - already submitting')
-      return
-    }
+    if (!hasQualified)           return;
+    if (categoryState.isCompleted) return;
+    if (isSubmitting)            return;
+    if (!currentUser?.uid)       { alert('Please log in first.'); return; }
 
-    console.log('✅ Starting submission process...')
-    setIsSubmitting(true)
-
+    setIsSubmitting(true);
     try {
-      // Simulate processing time
-      await new Promise(resolve => setTimeout(resolve, 1500))
+      await new Promise(r => setTimeout(r, 800));
 
-      const cooldownHours = 5
-      const newCooldownEnd = Date.now() + cooldownHours * 60 * 60 * 1000
-      const newState = { isCompleted: true, cooldownEnd: newCooldownEnd }
+      // Single unified write → usersweb/{uid}
+      await creditEarnings({
+        uid:       currentUser.uid,
+        taskId:    `video-${currentVideo.id}`,
+        taskTitle: currentVideo.title,
+        rewardUsd: currentVideo.rewardUsd,
+        taskType:  'video',
+      });
 
-      setCategoryState(newState)
-      
-      // Save to localStorage
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(`surveyCategory-${videoId}`, JSON.stringify(newState))
-        localStorage.setItem(`task-${currentVideo.id}`, JSON.stringify(newState))
-      }
+      const newCooldownEnd = Date.now() + 5 * 60 * 60 * 1000;
+      const newState = { isCompleted: true, cooldownEnd: newCooldownEnd };
+      setCategoryState(newState);
+      localStorage.setItem(`surveyCategory-${videoId}`, JSON.stringify(newState));
+      localStorage.setItem(`task-${currentVideo.id}`, JSON.stringify(newState));
 
-      // Save to Firebase if user is logged in
-      if (currentUser) {
-        console.log('💾 Saving to Firebase...')
-        
-        // Save video completion
-        await set(ref(database, `usersweb/${currentUser.uid}/videos/${currentVideo.id}`), {
-          videoId: currentVideo.id,
-          title: currentVideo.title,
-          reward: currentVideo.reward,
-          completedAt: Date.now(),
-          cooldownEnd: newCooldownEnd,
-          status: "completed",
-          watchTime: timeWatched,
-          totalDuration: videoDuration || currentVideo.duration
-        })
+      // Log video completion record (analytics only)
+      update(ref(database, `usersweb/${currentUser.uid}/videos/${currentVideo.id}`), {
+        title: currentVideo.title, rewardUsd: currentVideo.rewardUsd,
+        completedAt: Date.now(), cooldownEnd: newCooldownEnd,
+        status: 'completed', watchTime: timeWatched,
+        totalDuration: videoDuration || currentVideo.duration,
+      }).catch(() => {});
 
-        // Update rewards balance
-        const statsRef = ref(database, `usersweb/${currentUser.uid}/stats`)
-        const statsSnap = await get(statsRef)
-        const prevStats = statsSnap.exists() ? statsSnap.val() : { totalEarned: 0 }
-
-        await update(statsRef, {
-          totalEarned: (prevStats.totalEarned || 0) + currentVideo.reward
-        })
-        
-        console.log('✅ Firebase save completed')
-      }
-
-      console.log('🚀 Redirecting to completion page...')
-      router.push({
-        pathname: '/video-complete',
-        query: { reward: currentVideo.reward, videoTitle: currentVideo.title }
-      })
-    } catch (error) {
-      console.error("❌ Submission error:", error)
-      alert('An error occurred while submitting. Please try again.')
-      setIsSubmitting(false)
+      router.push({ pathname: '/video-complete', query: { reward: currentVideo.rewardUsd, videoTitle: currentVideo.title } });
+    } catch (err) {
+      console.error('Video submission error:', err);
+      alert('Submission failed. Please try again.');
+      setIsSubmitting(false);
     }
-  }
+  };
 
-  // If already completed
+  const actualDuration  = videoDuration || currentVideo.duration;
+  const watchPct        = actualDuration > 0 ? Math.min(100, (timeWatched / actualDuration) * 100) : 0;
+  const isButtonDisabled = !hasQualified || isSubmitting || categoryState.isCompleted;
+
+  // ── Auth gate ─────────────────────────────────────────────────────────────
+  if (!currentUser) return (
+    <Layout title="Video Task">
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=Sora:wght@700;800&family=DM+Sans:wght@400;500;600;700&display=swap');`}</style>
+      <div style={{ maxWidth: 440, margin: '60px auto', padding: '48px 32px', background: '#fff', borderRadius: 20, border: '1px solid #f0f0f0', textAlign: 'center', fontFamily: "'DM Sans', sans-serif", boxShadow: '0 4px 24px rgba(0,0,0,0.06)' }}>
+        <div style={{ width: 60, height: 60, borderRadius: 16, background: '#fff7ed', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 18px' }}><FiLock size={26} color="#E8541A" /></div>
+        <h2 style={{ fontFamily: "'Sora', sans-serif", fontSize: 20, fontWeight: 800, color: '#111', marginBottom: 8 }}>Login Required</h2>
+        <p style={{ fontSize: 14, color: '#888', marginBottom: 24, lineHeight: 1.6 }}>Please log in to watch videos and earn rewards.</p>
+        <button onClick={() => router.push('/auth/login')} style={{ padding: '11px 28px', background: '#E8541A', color: '#fff', border: 'none', borderRadius: 50, fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}>Go to Login</button>
+      </div>
+    </Layout>
+  );
+
+  // ── Cooldown state ────────────────────────────────────────────────────────
   if (categoryState.isCompleted && categoryState.cooldownEnd) {
-    const remainingHours = Math.ceil((categoryState.cooldownEnd - Date.now()) / (60 * 60 * 1000))
+    const hrs = Math.ceil((categoryState.cooldownEnd - Date.now()) / 3600000);
     return (
       <Layout title="Video Completed">
-        <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-md overflow-hidden p-6 my-8 text-center">
-          <div className="mb-6 text-green-500"><FiCheck className="inline-block text-5xl" /></div>
-          <h2 className="text-2xl font-bold mb-2">Video Completed!</h2>
-          <p className="text-lg text-blue-600 mb-2">+${currentVideo.reward.toFixed(2)} earned!</p>
-          <p className="text-gray-600 mb-6">Thank you for watching &quot;{currentVideo.title}&quot;.</p>
-          <div className="bg-blue-50 p-4 rounded-lg inline-flex items-center">
-            <FiClock className="mr-2 text-blue-500" />
-            <span className="text-blue-700">
-              You can watch this video again in {remainingHours} hour{remainingHours !== 1 ? 's' : ''}
-            </span>
+        <style>{`@import url('https://fonts.googleapis.com/css2?family=Sora:wght@700;800&family=DM+Sans:wght@400;500;600;700&display=swap');`}</style>
+        <div style={{ maxWidth: 440, margin: '60px auto', padding: '48px 32px', background: '#fff', borderRadius: 20, border: '1px solid #f0f0f0', textAlign: 'center', fontFamily: "'DM Sans', sans-serif", boxShadow: '0 4px 24px rgba(0,0,0,0.06)' }}>
+          <div style={{ width: 60, height: 60, borderRadius: 16, background: 'rgba(5,150,105,0.1)', border: '1.5px solid rgba(5,150,105,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 18px' }}><FiCheck size={28} color="#059669" /></div>
+          <h2 style={{ fontFamily: "'Sora', sans-serif", fontSize: 20, fontWeight: 800, color: '#111', marginBottom: 8 }}>Video Completed!</h2>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(5,150,105,0.08)', border: '1px solid rgba(5,150,105,0.2)', borderRadius: 50, padding: '6px 16px', marginBottom: 12 }}>
+            <FiDollarSign size={14} color="#059669" />
+            <span style={{ fontSize: 16, fontWeight: 800, color: '#059669', fontFamily: "'Sora', sans-serif" }}>{formatUsd(currentVideo.rewardUsd)} earned!</span>
           </div>
-          <button
-            onClick={() => router.push('/tasks')}
-            className="mt-6 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition flex items-center mx-auto"
-          >
-            <FiArrowLeft className="mr-2" /> Back to Available Tasks
+          <p style={{ fontSize: 14, color: '#888', marginBottom: 20, lineHeight: 1.6 }}>Thank you for watching &quot;{currentVideo.title}&quot;.</p>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 12, padding: '10px 16px', marginBottom: 24 }}>
+            <FiClock size={13} color="#92400e" /><span style={{ fontSize: 13, color: '#92400e', fontWeight: 600 }}>Available again in {hrs} hour{hrs !== 1 ? 's' : ''}</span>
+          </div>
+          <br />
+          <button onClick={() => router.push('/tasks')} style={{ padding: '11px 28px', background: '#E8541A', color: '#fff', border: 'none', borderRadius: 50, fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+            <FiArrowLeft size={14} /> Back to Tasks
           </button>
         </div>
       </Layout>
-    )
+    );
   }
 
-  const actualDuration = videoDuration || currentVideo.duration
-  const watchProgress = actualDuration > 0 ? (timeWatched / actualDuration) * 100 : 0
-  const requiredProgress = 30
-
-  // Enhanced button disabled logic
-  const isButtonDisabled = !hasWatched || isSubmitting || categoryState.isCompleted
-
+  // ── Main video UI ─────────────────────────────────────────────────────────
   return (
     <Layout title={currentVideo.title}>
-      <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-md overflow-hidden p-6 my-8">
-        <h1 className="text-2xl font-bold mb-4">{currentVideo.title}</h1>
-        <p className="text-gray-600 mb-6">{currentVideo.description}</p>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Sora:wght@700;800&family=DM+Sans:wght@400;500;600;700&display=swap');
+        * { box-sizing: border-box; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        video::-webkit-media-controls { background: rgba(26,10,0,0.8); }
+      `}</style>
 
-        {/* Video Player */}
-        <div className="mb-6 rounded-lg overflow-hidden">
+      <div style={{ maxWidth: 720, margin: '0 auto', padding: '32px 16px 60px', fontFamily: "'DM Sans', sans-serif" }}>
+
+        {/* Header */}
+        <div style={{ background: 'linear-gradient(135deg, #1a0a00 0%, #2d1200 40%, #0f1a2e 100%)', borderRadius: 18, padding: '24px 28px', marginBottom: 20, position: 'relative', overflow: 'hidden' }}>
+          <div style={{ position: 'absolute', top: -20, right: -20, width: 140, height: 140, background: 'radial-gradient(circle, rgba(232,84,26,0.18) 0%, transparent 70%)', borderRadius: '50%', pointerEvents: 'none' }} />
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12, position: 'relative', zIndex: 1 }}>
+            <div>
+              <p style={{ fontSize: 11, fontWeight: 700, color: '#E8541A', letterSpacing: '0.1em', textTransform: 'uppercase', margin: '0 0 6px' }}>🎬 Video Task</p>
+              <h1 style={{ fontFamily: "'Sora', sans-serif", fontSize: 20, fontWeight: 800, color: '#fff', margin: '0 0 6px', lineHeight: 1.3 }}>{currentVideo.title}</h1>
+              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', margin: 0 }}>{currentVideo.description}</p>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(5,150,105,0.2)', border: '1px solid rgba(5,150,105,0.35)', borderRadius: 50, padding: '8px 16px', flexShrink: 0 }}>
+              <FiDollarSign size={15} color="#34d399" />
+              <span style={{ fontFamily: "'Sora', sans-serif", fontSize: 18, fontWeight: 800, color: '#34d399' }}>{formatUsd(currentVideo.rewardUsd)}</span>
+              <span style={{ fontSize: 11, color: 'rgba(52,211,153,0.7)', fontWeight: 500 }}>reward</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Video player */}
+        <div style={{ background: '#0d0d0d', borderRadius: 16, overflow: 'hidden', marginBottom: 20, border: '1px solid rgba(255,255,255,0.06)', boxShadow: '0 8px 40px rgba(0,0,0,0.3)' }}>
           <video
             ref={videoRef}
             controls
-            className="w-full"
-            poster={currentVideo.thumbnail}
+            style={{ width: '100%', display: 'block', maxHeight: 400 }}
             onTimeUpdate={handleTimeUpdate}
             onEnded={handleVideoEnded}
             onLoadedMetadata={handleLoadedMetadata}
@@ -332,105 +242,84 @@ const VideoPage = () => {
           </video>
         </div>
 
-        {/* Loading state for video metadata */}
-        {!videoLoaded && (
-          <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <p className="text-yellow-800">Loading video...</p>
+        {/* Progress card */}
+        <div style={{ background: '#fff', border: '1px solid #f0f0f0', borderRadius: 16, padding: '20px 22px', marginBottom: 16, boxShadow: '0 2px 12px rgba(0,0,0,0.05)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              {hasQualified
+                ? <><FiCheckCircle size={16} color="#059669" /><span style={{ fontSize: 13, fontWeight: 700, color: '#059669' }}>Minimum watch time reached!</span></>
+                : <><FiPlay size={14} color="#E8541A" /><span style={{ fontSize: 13, fontWeight: 600, color: '#555' }}>Watch at least {REQUIRED_PCT}% to qualify</span></>
+              }
+            </div>
+            <span style={{ fontSize: 13, fontWeight: 700, color: watchPct >= REQUIRED_PCT ? '#059669' : '#E8541A' }}>
+              {watchPct.toFixed(0)}% watched
+            </span>
           </div>
-        )}
 
-        {/* Progress Info */}
-        <div className="mb-6">
-          <div className="flex justify-between mb-2">
-            <span className="text-sm font-medium text-gray-700">
-              Watched: {Math.floor(timeWatched)}s / {Math.floor(actualDuration)}s
-            </span>
-            <span className="text-sm font-medium text-gray-700">
-              {watchProgress.toFixed(1)}% Complete (Need {requiredProgress}%)
-            </span>
+          {/* Watch progress bar */}
+          <div style={{ height: 8, background: '#f0f0f0', borderRadius: 8, overflow: 'visible', position: 'relative', marginBottom: 8 }}>
+            <div style={{ height: '100%', width: `${watchPct}%`, background: watchPct >= REQUIRED_PCT ? 'linear-gradient(90deg, #059669, #34d399)' : 'linear-gradient(90deg, #E8541A, #fb923c)', borderRadius: 8, transition: 'width 0.3s ease' }} />
+            {/* 30% threshold marker */}
+            <div style={{ position: 'absolute', left: `${REQUIRED_PCT}%`, top: -3, width: 2, height: 14, background: '#111', borderRadius: 1 }} />
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2.5">
-            <div
-              className={`h-2.5 rounded-full transition-all duration-300 ${
-                watchProgress >= requiredProgress ? 'bg-green-600' : 'bg-blue-600'
-              }`}
-              style={{ width: `${Math.min(100, watchProgress)}%` }}
-            ></div>
-          </div>
-          
-          {/* Progress milestone indicator */}
-          <div className="mt-2 text-xs text-gray-500">
-            {watchProgress >= requiredProgress ? (
-              <span className="text-green-600 font-medium">✓ Minimum watch time achieved!</span>
-            ) : (
-              <span>Watch {requiredProgress}% to qualify for reward</span>
-            )}
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#bbb' }}>
+            <span>{Math.floor(timeWatched)}s watched</span>
+            <span style={{ position: 'relative', left: `-${100 - REQUIRED_PCT}%` }}>↑ {REQUIRED_PCT}% goal</span>
+            <span>{Math.floor(actualDuration)}s total</span>
           </div>
         </div>
 
-        {/* Enhanced Debug info */}
-        {process.env.NODE_ENV === 'development' && (
-          <div className="mb-4 p-3 bg-gray-100 rounded-lg text-xs space-y-1">
-            <p><strong>🐛 DEBUG INFO:</strong></p>
-            <p>Has Watched: <span className={hasWatched ? 'text-green-600' : 'text-red-600'}>{hasWatched ? 'Yes' : 'No'}</span></p>
-            <p>Time Watched: {timeWatched.toFixed(1)}s</p>
-            <p>Video Duration: {actualDuration.toFixed(1)}s</p>
-            <p>Required Time (30%): {(actualDuration * 0.3).toFixed(1)}s</p>
-            <p>Progress: {watchProgress.toFixed(1)}%</p>
-            <p>Button Disabled: <span className={isButtonDisabled ? 'text-red-600' : 'text-green-600'}>{isButtonDisabled ? 'Yes' : 'No'}</span></p>
-            <p>Is Submitting: {isSubmitting ? 'Yes' : 'No'}</p>
-            <p>Category Completed: {categoryState.isCompleted ? 'Yes' : 'No'}</p>
-            <p>Video Loaded: {videoLoaded ? 'Yes' : 'No'}</p>
+        {/* Reward info */}
+        <div style={{ background: hasQualified ? 'rgba(5,150,105,0.06)' : '#fafafa', border: `1px solid ${hasQualified ? 'rgba(5,150,105,0.2)' : '#f0f0f0'}`, borderRadius: 14, padding: '16px 20px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 14 }}>
+          <div style={{ width: 44, height: 44, borderRadius: 12, background: hasQualified ? 'rgba(5,150,105,0.1)' : '#fff7ed', border: `1px solid ${hasQualified ? 'rgba(5,150,105,0.2)' : 'rgba(232,84,26,0.15)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <FiDollarSign size={20} color={hasQualified ? '#059669' : '#E8541A'} />
           </div>
-        )}
-
-        {/* Reward Info */}
-        <div className={`p-4 rounded-lg mb-6 ${hasWatched ? 'bg-green-50' : 'bg-blue-50'}`}>
-          <h3 className={`font-medium mb-1 ${hasWatched ? 'text-green-800' : 'text-blue-800'}`}>
-            Task Reward
-          </h3>
-          <p className={hasWatched ? 'text-green-600' : 'text-blue-600'}>
-            {hasWatched
-              ? <>You&apos;ve qualified for the reward of ${currentVideo.reward.toFixed(2)}! Submit to claim your payment.</>
-              : `Watch at least ${requiredProgress}% of the video to qualify for the $${currentVideo.reward.toFixed(2)} reward.`}
-          </p>
+          <div>
+            <p style={{ fontSize: 13, fontWeight: 700, color: hasQualified ? '#059669' : '#111', margin: '0 0 3px' }}>
+              {hasQualified ? `You've qualified for ${formatUsd(currentVideo.rewardUsd)}!` : 'Task Reward'}
+            </p>
+            <p style={{ fontSize: 12, color: '#888', margin: 0 }}>
+              {hasQualified
+                ? 'Click "Claim Reward" below to credit your account.'
+                : `Watch at least ${REQUIRED_PCT}% of the video to earn ${formatUsd(currentVideo.rewardUsd)}.`}
+            </p>
+          </div>
         </div>
 
-        {/* Enhanced Submit Button with better debugging */}
+        {/* Submit button */}
         <button
           onClick={handleSubmit}
           disabled={isButtonDisabled}
-          className={`w-full py-3 px-4 rounded-md flex items-center justify-center font-medium transition-colors ${
-            isButtonDisabled
-              ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              : 'bg-green-600 text-white hover:bg-green-700'
-          }`}
+          style={{
+            width: '100%', padding: '15px', borderRadius: 50,
+            background: isSubmitting ? '#aaa' : !hasQualified ? '#e0e0e0' : '#059669',
+            border: 'none',
+            color: !hasQualified || isSubmitting ? (isSubmitting ? '#fff' : '#aaa') : '#fff',
+            fontSize: 15, fontWeight: 700,
+            cursor: isButtonDisabled ? 'not-allowed' : 'pointer',
+            fontFamily: "'DM Sans', sans-serif",
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            transition: 'background 0.2s',
+            boxShadow: !isButtonDisabled ? '0 4px 20px rgba(5,150,105,0.3)' : 'none',
+          }}
         >
           {isSubmitting ? (
-            <>
-              <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              Processing...
-            </>
-          ) : hasWatched ? (
-            `Submit to Claim Your $${currentVideo.reward.toFixed(2)} Reward`
+            <><div style={{ width: 16, height: 16, border: '2px solid #fff', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} /> Processing…</>
+          ) : hasQualified ? (
+            <><FiCheckCircle size={16} /> Claim Reward — {formatUsd(currentVideo.rewardUsd)}</>
           ) : (
-            `Watch ${requiredProgress}% to Enable Submission`
+            `Watch ${REQUIRED_PCT}% to Enable`
           )}
         </button>
-        
-        {/* Debug button state info */}
-        {process.env.NODE_ENV === 'development' && (
-          <div className="mt-2 text-xs text-center text-gray-500">
-            Button State: {isButtonDisabled ? '🔒 Disabled' : '✅ Enabled'} | 
-            Reason: {!hasWatched ? 'Not watched enough' : isSubmitting ? 'Submitting' : categoryState.isCompleted ? 'Already completed' : 'Ready to submit'}
-          </div>
-        )}
+
+        {/* Back link */}
+        <button onClick={() => router.push('/tasks')} style={{ display: 'flex', alignItems: 'center', gap: 6, margin: '20px auto 0', background: 'none', border: 'none', color: '#aaa', fontSize: 13, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}>
+          <FiArrowLeft size={13} /> Back to Tasks
+        </button>
+
       </div>
     </Layout>
-  )
-}
+  );
+};
 
-export default VideoPage
+export default VideoPage;

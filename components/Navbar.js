@@ -1,158 +1,231 @@
 import Link from 'next/link'
 import { useRouter } from 'next/router'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '@/context/AuthContext'
 
 export default function Navbar() {
   const router = useRouter()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
   const { currentUser, loading, logout } = useAuth()
 
   const isActive = (href) => router.pathname === href
 
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 20)
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
+  const navLinkStyle = (href) => ({
+    color: isActive(href) ? '#E8541A' : '#444',
+    textDecoration: 'none',
+    fontSize: 15,
+    fontWeight: 500,
+    padding: '6px 0',
+    borderBottom: isActive(href) ? '2px solid #E8541A' : '2px solid transparent',
+    transition: 'color 0.2s',
+    fontFamily: "'DM Sans', sans-serif",
+  })
+
   if (loading) {
     return (
-      <header className="sticky top-0 z-50 bg-gradient-to-r from-blue-900 to-blue-800 shadow-lg">
-        <div className="container mx-auto px-4 py-3 flex justify-between items-center">
-          <div className="flex flex-col items-start gap-0.5 select-none">
-            <div className="flex items-center gap-0.5">
-              <span className="px-3 py-1.5 bg-white/15 rounded-lg text-white text-xl font-black tracking-widest">EARN</span>
-              <span className="px-3 py-1.5 bg-emerald-400 rounded-lg text-emerald-950 text-xl font-black tracking-widest italic">FLEX</span>
-            </div>
-            <span className="text-[10px] tracking-[0.3em] text-blue-300 pl-1">EARN · FLEX · GROW</span>
-          </div>
-          <div className="animate-pulse bg-white/20 h-8 w-8 rounded-full"></div>
+      <header style={headerStyle(false)}>
+        <div style={containerStyle}>
+          <LogoMark />
+          <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#f0f0f0', animation: 'pulse 1s infinite' }} />
         </div>
       </header>
     )
   }
 
   return (
-    <header className="sticky top-0 z-50 bg-gradient-to-r from-blue-900 to-blue-800 shadow-lg">
-      <div className="container mx-auto px-4 py-3 flex justify-between items-center">
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Sora:wght@700;800&family=DM+Sans:wght@400;500;600;700&display=swap');
+        .nav-link:hover { color: #E8541A !important; }
+        .login-btn:hover { background: #f5f5f5 !important; }
+        .cta-btn:hover { background: #c94412 !important; }
+        @media (max-width: 768px) {
+          .desktop-nav, .desktop-cta { display: none !important; }
+          .mobile-toggle { display: flex !important; }
+        }
+        @media (min-width: 769px) {
+          .mobile-toggle { display: none !important; }
+        }
+      `}</style>
 
-        {/* Logo */}
-        <Link href="/" className="flex flex-col items-start select-none gap-0.5">
-          <div className="flex items-center gap-0.5">
-            <span className="px-3 py-1.5 bg-white/15 border border-white/20 rounded-lg text-white text-xl font-black tracking-widest">
-              EARN
-            </span>
-            <span className="px-3 py-1.5 bg-emerald-400 rounded-lg text-emerald-950 text-xl font-black tracking-widest italic">
-              FLEX
-            </span>
-          </div>
-          <span className="text-[10px] tracking-[0.3em] text-blue-300 pl-1">
-            EARN · FLEX · GROW
-          </span>
-        </Link>
+      <header style={headerStyle(scrolled)}>
+        <div style={containerStyle}>
 
-        {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center space-x-6">
-          <Link
-            href="/"
-            className={`py-2 text-sm font-medium transition ${isActive('/') ? 'text-white border-b-2 border-emerald-400' : 'text-blue-200 hover:text-white'}`}
-          >
-            Home
+          {/* Logo */}
+          <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 0 }}>
+            <LogoMark />
           </Link>
 
-          {currentUser ? (
-            <>
-              <Link
-                href="/dashboard"
-                className={`py-2 text-sm font-medium transition ${isActive('/dashboard') ? 'text-white border-b-2 border-emerald-400' : 'text-blue-200 hover:text-white'}`}
-              >
-                Dashboard
-              </Link>
-              <Link
-                href="/tasks"
-                className={`py-2 text-sm font-medium transition ${isActive('/tasks') ? 'text-white border-b-2 border-emerald-400' : 'text-blue-200 hover:text-white'}`}
-              >
-                Tasks
-              </Link>
-              <Link
-                href="/profile"
-                className={`py-2 text-sm font-medium transition ${isActive('/profile') ? 'text-white border-b-2 border-emerald-400' : 'text-blue-200 hover:text-white'}`}
-              >
-                Profile
-              </Link>
+          {/* Desktop Navigation */}
+          <nav className="desktop-nav" style={{ display: 'flex', alignItems: 'center', gap: 36, fontFamily: "'DM Sans', sans-serif" }}>
+            <Link href="/" className="nav-link" style={navLinkStyle('/')}>Home</Link>
+
+            {currentUser ? (
+              <>
+                <Link href="/dashboard" className="nav-link" style={navLinkStyle('/dashboard')}>Dashboard</Link>
+                <Link href="/tasks" className="nav-link" style={navLinkStyle('/tasks')}>Tasks</Link>
+                <Link href="/profile" className="nav-link" style={navLinkStyle('/profile')}>Profile</Link>
+              </>
+            ) : (
+              <>
+                <Link href="/about" className="nav-link" style={navLinkStyle('/about')}>About Us</Link>
+                <Link href="/tasks" className="nav-link" style={navLinkStyle('/tasks')}>Opportunities</Link>
+                <Link href="/contact" className="nav-link" style={navLinkStyle('/contact')}>FAQ</Link>
+              </>
+            )}
+          </nav>
+
+          {/* Desktop CTA */}
+          <div className="desktop-cta" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            {currentUser ? (
               <button
                 onClick={() => logout()}
-                className="py-2 text-sm font-medium text-red-300 hover:text-red-200 transition"
+                style={{ padding: '9px 22px', borderRadius: 50, border: 'none', background: 'none', color: '#cc3300', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}
               >
                 Logout
               </button>
-            </>
-          ) : (
-            <>
-              <Link
-                href="/about"
-                className={`py-2 text-sm font-medium transition ${isActive('/about') ? 'text-white border-b-2 border-emerald-400' : 'text-blue-200 hover:text-white'}`}
-              >
-                About
-              </Link>
-              <Link
-                href="/contact"
-                className={`py-2 text-sm font-medium transition ${isActive('/contact') ? 'text-white border-b-2 border-emerald-400' : 'text-blue-200 hover:text-white'}`}
-              >
-                Contact
-              </Link>
-              <Link
-                href="/auth/login"
-                className={`py-2 text-sm font-medium transition ${isActive('/auth/login') ? 'text-white border-b-2 border-emerald-400' : 'text-blue-200 hover:text-white'}`}
-              >
-                Login
-              </Link>
-              <Link
-                href="/auth/register"
-                className="bg-emerald-400 hover:bg-emerald-300 text-emerald-950 text-sm font-bold px-4 py-2 rounded-lg transition"
-              >
-                Register
-              </Link>
-            </>
-          )}
-        </nav>
+            ) : (
+              <>
+                <Link
+                  href="/auth/login"
+                  className="login-btn"
+                  style={{ padding: '9px 22px', borderRadius: 50, border: '1.5px solid #222', color: '#222', fontSize: 14, fontWeight: 600, textDecoration: 'none', fontFamily: "'DM Sans', sans-serif", transition: 'background 0.2s' }}
+                >
+                  Login
+                </Link>
+                <Link
+                  href="/auth/register"
+                  className="cta-btn"
+                  style={{ padding: '9px 22px', borderRadius: 50, background: '#E8541A', color: '#fff', fontSize: 14, fontWeight: 700, textDecoration: 'none', fontFamily: "'DM Sans', sans-serif", transition: 'background 0.2s' }}
+                >
+                  View Opportunities
+                </Link>
+              </>
+            )}
+          </div>
 
-        {/* Mobile Menu Button */}
-        <button
-          className="md:hidden text-white"
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-        >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
-        </button>
-      </div>
-
-      {/* Mobile Menu */}
-      {mobileMenuOpen && (
-        <div className="md:hidden bg-blue-900 border-t border-white/10 pb-4 px-4 space-y-1">
-          <Link
-            href="/"
-            className={`block py-2 px-3 rounded text-sm font-medium ${isActive('/') ? 'text-white bg-white/10' : 'text-blue-200 hover:text-white hover:bg-white/10'}`}
-            onClick={() => setMobileMenuOpen(false)}
+          {/* Mobile Menu Toggle */}
+          <button
+            className="mobile-toggle"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#222', padding: 4, alignItems: 'center' }}
+            aria-label="Toggle menu"
           >
-            Home
-          </Link>
-
-          {currentUser ? (
-            <>
-              <Link href="/dashboard" className={`block py-2 px-3 rounded text-sm font-medium ${isActive('/dashboard') ? 'text-white bg-white/10' : 'text-blue-200 hover:text-white hover:bg-white/10'}`} onClick={() => setMobileMenuOpen(false)}>Dashboard</Link>
-              <Link href="/tasks" className={`block py-2 px-3 rounded text-sm font-medium ${isActive('/tasks') ? 'text-white bg-white/10' : 'text-blue-200 hover:text-white hover:bg-white/10'}`} onClick={() => setMobileMenuOpen(false)}>Tasks</Link>
-              <Link href="/profile" className={`block py-2 px-3 rounded text-sm font-medium ${isActive('/profile') ? 'text-white bg-white/10' : 'text-blue-200 hover:text-white hover:bg-white/10'}`} onClick={() => setMobileMenuOpen(false)}>Profile</Link>
-              <button onClick={() => { logout(); setMobileMenuOpen(false); }} className="block w-full text-left py-2 px-3 text-sm font-medium text-red-300 hover:bg-white/10 rounded">Logout</button>
-            </>
-          ) : (
-            <>
-              <Link href="/about" className={`block py-2 px-3 rounded text-sm font-medium ${isActive('/about') ? 'text-white bg-white/10' : 'text-blue-200 hover:text-white hover:bg-white/10'}`} onClick={() => setMobileMenuOpen(false)}>About</Link>
-              <Link href="/contact" className={`block py-2 px-3 rounded text-sm font-medium ${isActive('/contact') ? 'text-white bg-white/10' : 'text-blue-200 hover:text-white hover:bg-white/10'}`} onClick={() => setMobileMenuOpen(false)}>Contact</Link>
-              <div className="pt-2 border-t border-white/10 mt-2 space-y-1">
-                <Link href="/auth/login" className={`block py-2 px-3 rounded text-sm font-medium ${isActive('/auth/login') ? 'text-white bg-white/10' : 'text-blue-200 hover:text-white hover:bg-white/10'}`} onClick={() => setMobileMenuOpen(false)}>Login</Link>
-                <Link href="/auth/register" className="block py-2 px-3 rounded text-sm font-bold bg-emerald-400 text-emerald-950 hover:bg-emerald-300" onClick={() => setMobileMenuOpen(false)}>Register</Link>
-              </div>
-            </>
-          )}
+            <svg width={26} height={26} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              {mobileMenuOpen
+                ? <><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></>
+                : <><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></>
+              }
+            </svg>
+          </button>
         </div>
-      )}
-    </header>
+
+        {/* Mobile Dropdown Menu */}
+        {mobileMenuOpen && (
+          <div style={{ background: '#fff', borderTop: '1px solid #f0f0f0', padding: '20px 24px 28px', display: 'flex', flexDirection: 'column', gap: 4, fontFamily: "'DM Sans', sans-serif" }}>
+            <MobileLink href="/" label="Home" isActive={isActive('/')} onClick={() => setMobileMenuOpen(false)} />
+
+            {currentUser ? (
+              <>
+                <MobileLink href="/dashboard" label="Dashboard" isActive={isActive('/dashboard')} onClick={() => setMobileMenuOpen(false)} />
+                <MobileLink href="/tasks" label="Tasks" isActive={isActive('/tasks')} onClick={() => setMobileMenuOpen(false)} />
+                <MobileLink href="/profile" label="Profile" isActive={isActive('/profile')} onClick={() => setMobileMenuOpen(false)} />
+                <button
+                  onClick={() => { logout(); setMobileMenuOpen(false) }}
+                  style={{ textAlign: 'left', padding: '12px 16px', borderRadius: 10, background: 'none', border: 'none', color: '#cc3300', fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <MobileLink href="/about" label="About Us" isActive={isActive('/about')} onClick={() => setMobileMenuOpen(false)} />
+                <MobileLink href="/tasks" label="Opportunities" isActive={isActive('/tasks')} onClick={() => setMobileMenuOpen(false)} />
+                <MobileLink href="/contact" label="FAQ" isActive={isActive('/contact')} onClick={() => setMobileMenuOpen(false)} />
+                <div style={{ display: 'flex', gap: 12, marginTop: 16, paddingTop: 16, borderTop: '1px solid #f0f0f0' }}>
+                  <Link
+                    href="/auth/login"
+                    onClick={() => setMobileMenuOpen(false)}
+                    style={{ flex: 1, textAlign: 'center', padding: '11px', borderRadius: 50, border: '1.5px solid #222', color: '#222', fontSize: 14, fontWeight: 600, textDecoration: 'none' }}
+                  >
+                    Login
+                  </Link>
+                  <Link
+                    href="/auth/register"
+                    onClick={() => setMobileMenuOpen(false)}
+                    style={{ flex: 1, textAlign: 'center', padding: '11px', borderRadius: 50, background: '#E8541A', color: '#fff', fontSize: 14, fontWeight: 700, textDecoration: 'none' }}
+                  >
+                    Sign Up
+                  </Link>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+      </header>
+    </>
   )
+}
+
+// ─── Sub-components ────────────────────────────────────────────────────────────
+
+function LogoMark() {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
+      <span style={{ fontFamily: "'Sora', sans-serif", fontWeight: 800, fontSize: 22, color: '#111', letterSpacing: '-0.5px' }}>Earn</span>
+      <span style={{ fontFamily: "'Sora', sans-serif", fontWeight: 800, fontSize: 22, color: '#E8541A', letterSpacing: '-0.5px', fontStyle: 'italic' }}>Flex</span>
+    </div>
+  )
+}
+
+function MobileLink({ href, label, isActive, onClick }) {
+  return (
+    <Link
+      href={href}
+      onClick={onClick}
+      style={{
+        display: 'block',
+        padding: '12px 16px',
+        borderRadius: 10,
+        background: isActive ? '#fef3ee' : 'transparent',
+        color: isActive ? '#E8541A' : '#333',
+        fontSize: 15,
+        fontWeight: isActive ? 700 : 500,
+        textDecoration: 'none',
+        fontFamily: "'DM Sans', sans-serif",
+      }}
+    >
+      {label}
+    </Link>
+  )
+}
+
+// ─── Styles ───────────────────────────────────────────────────────────────────
+
+const headerStyle = (scrolled) => ({
+  position: 'sticky',
+  top: 0,
+  zIndex: 100,
+  background: 'rgba(255,255,255,0.97)',
+  backdropFilter: 'blur(12px)',
+  boxShadow: scrolled ? '0 1px 20px rgba(0,0,0,0.08)' : '0 1px 0 #f0f0f0',
+  transition: 'box-shadow 0.3s',
+  fontFamily: "'DM Sans', sans-serif",
+})
+
+const containerStyle = {
+  maxWidth: 1200,
+  margin: '0 auto',
+  padding: '0 24px',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  height: 68,
 }
