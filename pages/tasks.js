@@ -130,37 +130,56 @@ function ActivationModal({ onClose, onActivate, userSubscription }) {
     }}>
       <div style={{
         background: '#fff', borderRadius: 20, maxWidth: 400, width: '100%',
-        padding: 32, boxShadow: '0 32px 80px rgba(0,0,0,0.18)', position: 'relative',
+        padding: '32px 28px 24px', boxShadow: '0 32px 80px rgba(0,0,0,0.18)', position: 'relative',
       }}>
-        <button onClick={onClose} style={{ position: 'absolute', top: 16, right: 16, background: 'none', border: 'none', cursor: 'pointer', color: '#aaa', padding: 4 }}>
-          <FiX size={20} />
+        <button onClick={onClose} style={{ position: 'absolute', top: 16, right: 16, background: 'none', border: 'none', cursor: 'pointer', color: '#ccc', padding: 4 }}>
+          <FiX size={18} />
         </button>
-        <div style={{ width: 56, height: 56, borderRadius: 16, background: '#fff7ed', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
-          <FiAlertTriangle size={26} color="#E8541A" />
+
+        {/* Icon */}
+        <div style={{ width: 56, height: 56, borderRadius: 16, background: 'linear-gradient(135deg, #1a0a00, #2d1200)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 18px' }}>
+          <FiLock size={24} color="#E8541A" />
         </div>
-        <h3 style={{ fontFamily: "'Sora', sans-serif", fontSize: 20, fontWeight: 800, color: '#111', textAlign: 'center', marginBottom: 10 }}>
-          Account Not Activated
+
+        {/* Title & subtitle */}
+        <h3 style={{ fontFamily: "'Sora', sans-serif", fontSize: 20, fontWeight: 800, color: '#111', textAlign: 'center', margin: '0 0 8px' }}>
+          Account Not Active
         </h3>
-        <div style={{ textAlign: 'center', fontSize: 14, color: '#777', lineHeight: 1.6, marginBottom: 24 }}>
-          {userSubscription ? (
-            <>
-              <p>Your subscription is not currently active.</p>
-              <p style={{ marginTop: 6 }}>Plan: <strong style={{ color: '#333' }}>{userSubscription.plan || 'Unknown'}</strong></p>
-              <p>Status: <strong style={{ color: '#E8541A' }}>{userSubscription.status || 'Inactive'}</strong></p>
-            </>
-          ) : (
-            <p>You need an active plan to start earning. Choose a plan to unlock all tasks.</p>
-          )}
+        <p style={{ textAlign: 'center', fontSize: 13, color: '#888', lineHeight: 1.65, margin: '0 0 20px' }}>
+          {userSubscription
+            ? 'Your current plan has expired. Purchase a new plan to continue earning cash.'
+            : "You don't have an active plan yet. Purchase a plan to unlock all task categories and start earning cash."}
+        </p>
+
+        {/* Benefits */}
+        <div style={{ background: '#fafafa', border: '1px solid #f0f0f0', borderRadius: 12, padding: '14px 16px', marginBottom: 22, display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {[
+            { icon: '✅', text: 'Access to all task categories' },
+            { icon: '💵', text: 'Earn real money daily' },
+            { icon: '🤖', text: 'Includes high priority AI Training & Survey tasks' },
+          ].map((item, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ fontSize: 15, flexShrink: 0 }}>{item.icon}</span>
+              <span style={{ fontSize: 13, color: '#444', fontFamily: "'DM Sans', sans-serif", fontWeight: 500, lineHeight: 1.4 }}>{item.text}</span>
+            </div>
+          ))}
         </div>
-        <div style={{ display: 'flex', gap: 10 }}>
-          <button onClick={onClose} style={{ flex: 1, padding: '11px', borderRadius: 50, border: '1.5px solid #e0e0e0', background: 'none', fontSize: 14, fontWeight: 600, color: '#555', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}>
-            Later
+
+        {/* Buttons */}
+        <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
+          <button onClick={onClose} style={{ flex: '0 0 auto', padding: '11px 18px', borderRadius: 50, border: '1.5px solid #e8e8e8', background: 'none', fontSize: 13, fontWeight: 600, color: '#888', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}>
+            Maybe Later
           </button>
-          <button onClick={onActivate} style={{ flex: 1, padding: '11px', borderRadius: 50, background: '#E8541A', border: 'none', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-            <FiZap size={15} />
-            {userSubscription ? 'Reactivate' : 'Activate Now'}
+          <button onClick={onActivate} style={{ flex: 1, padding: '12px', borderRadius: 50, background: '#E8541A', border: 'none', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, boxShadow: '0 4px 16px rgba(232,84,26,0.28)' }}>
+            <FiDollarSign size={15} />
+            {userSubscription ? 'Purchase New Plan' : 'Purchase a Plan'}
           </button>
         </div>
+
+        {/* Fine print */}
+        <p style={{ textAlign: 'center', fontSize: 11, color: '#bbb', margin: 0, fontFamily: "'DM Sans', sans-serif" }}>
+          Plans start from $1 · Instant access · No hidden fees
+        </p>
       </div>
     </div>
   );

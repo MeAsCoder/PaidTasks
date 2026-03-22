@@ -30,15 +30,17 @@ import payHeroService, {
 const PLANS = [
   {
     id: 'basic',
-    name: 'Basic',
-    priceUsd: 0.5,
+    name: 'Starter',
+    priceUsd: 2.00,
     icon: '🌱',
-    tagline: 'Perfect to get started',
+    tagline: 'The perfect launchpad',
+    badge: null,
     features: [
-      'Access to basic surveys',
-      '3 tasks per day',
-      'Standard support',
-      'KSh 50 per survey',
+      { icon: '✅', text: 'Access to all task categories' },
+      { icon: '📋', text: '5 tasks per day' },
+      { icon: '💵', text: 'Minimum of $10 earnings per day' },
+      { icon: '💬', text: 'Standard support' },
+      { icon: '🔄', text: 'Tasks reset every 5 hours' },
     ],
     popular: false,
     color: '#0891B2',
@@ -47,16 +49,18 @@ const PLANS = [
   },
   {
     id: 'silver',
-    name: 'Silver',
-    priceUsd: 10,
+    name: 'Pro',
+    priceUsd: 5.00,
     icon: '⚡',
-    tagline: 'More tasks, more earnings',
+    tagline: 'For serious earners',
+    badge: '🔥 Best Value',
     features: [
-      'Access to premium surveys',
-      '5 tasks per day',
-      'Priority support',
-      'KSh 100 per survey',
-      'Weekly bonus tasks',
+      { icon: '✅', text: 'Access to all task categories' },
+      { icon: '📋', text: '10 tasks per day' },
+      { icon: '💵', text: 'Minimum of $25 earnings per day' },
+      { icon: '🤖', text: 'High-paying AI Training tasks' },
+      { icon: '⭐', text: 'Priority support' },
+      { icon: '🎁', text: 'Weekly bonus tasks' },
     ],
     popular: false,
     color: '#7C3AED',
@@ -65,17 +69,19 @@ const PLANS = [
   },
   {
     id: 'gold',
-    name: 'Gold',
-    priceUsd: 20,
+    name: 'Elite',
+    priceUsd: 10.00,
     icon: '🏆',
     tagline: 'Maximum earning potential',
+    badge: '⭐ Most Popular',
     features: [
-      'Access to all surveys & AI tasks',
-      '10 tasks per day',
-      '24/7 priority support',
-      'KSh 150 per survey',
-      'Weekly bonus tasks',
-      'Early access to new features',
+      { icon: '✅', text: 'Access to all task categories' },
+      { icon: '📋', text: 'Unlimited tasks per day' },
+      { icon: '💵', text: 'Minimum of $50 earnings per day' },
+      { icon: '🤖', text: 'Exclusive AI & premium tasks' },
+      { icon: '🚀', text: '24/7 priority support' },
+      { icon: '🎁', text: 'Daily bonus tasks' },
+      { icon: '🔓', text: 'Early access to new features' },
     ],
     popular: true,
     color: '#E8541A',
@@ -306,7 +312,7 @@ function PurchaseModal({ plan, user, onClose, onSuccess }) {
               <div style={{ background: '#fff7ed', border: '1px solid rgba(232,84,26,0.18)', borderRadius: 12, padding: '12px 14px', marginBottom: 20, display: 'flex', gap: 10 }}>
                 <FiAward size={16} color="#E8541A" style={{ flexShrink: 0, marginTop: 1 }} />
                 <p style={{ fontSize: 12, color: '#92400e', margin: 0, lineHeight: 1.55 }}>
-                  <strong>Refundable Activation Fee.</strong> {formatKes(priceKes)} is credited back upon your first successful withdrawal.
+                  <strong>100% Refundable.</strong> Your {formatKes(priceKes)} activation fee is credited back in full on your first successful withdrawal.
                 </p>
               </div>
 
@@ -627,7 +633,7 @@ export default function SubscriptionPage() {
               Choose Your Plan
             </h1>
             <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.5)', margin: 0, lineHeight: 1.7 }}>
-              Activate your account to unlock tasks and start earning. All plans have a fully refundable activation fee.
+              Start earning real money today. Plans from just $2 — fully refundable on your first withdrawal.
             </p>
             {/* Live rate pill */}
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 18, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 50, padding: '6px 14px' }}>
@@ -658,9 +664,10 @@ export default function SubscriptionPage() {
                   flexDirection: 'column',
                 }}
               >
-                {plan.popular && (
+                {/* Popular / badge banner */}
+                {plan.badge && (
                   <div style={{ position: 'absolute', top: -1, left: '50%', transform: 'translateX(-50%)', background: plan.color, color: '#fff', fontSize: 10, fontWeight: 800, padding: '4px 14px', borderRadius: '0 0 10px 10px', letterSpacing: '0.06em', whiteSpace: 'nowrap' }}>
-                    ⭐ MOST POPULAR
+                    {plan.badge}
                   </div>
                 )}
 
@@ -680,28 +687,27 @@ export default function SubscriptionPage() {
                     </div>
                   </div>
 
-                  {/* Price — USD + KES */}
+                  {/* Price — USD primary, KES secondary */}
                   <div style={{ marginBottom: 16, paddingBottom: 14, borderBottom: '1px solid #f5f5f5' }}>
-                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
-                      <span style={{ fontFamily: "'Sora', sans-serif", fontSize: 26, fontWeight: 800, color: plan.popular ? plan.color : '#111', letterSpacing: '-0.5px', lineHeight: 1 }}>
-                        KSh {usdToKes(plan.priceUsd).toLocaleString()}
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+                      <span style={{ fontFamily: "'Sora', sans-serif", fontSize: 13, fontWeight: 700, color: plan.popular ? plan.color : '#888', marginBottom: 2 }}>$</span>
+                      <span style={{ fontFamily: "'Sora', sans-serif", fontSize: 32, fontWeight: 800, color: plan.popular ? plan.color : '#111', letterSpacing: '-1px', lineHeight: 1 }}>
+                        {plan.priceUsd.toFixed(2)}
                       </span>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 3 }}>
-                      <span style={{ fontSize: 11, color: '#bbb', textDecoration: 'line-through' }}>${plan.priceUsd} USD</span>
-                      <span style={{ fontSize: 10, color: '#ccc' }}>·</span>
-                      <span style={{ fontSize: 11, color: '#bbb' }}>one-time</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
+                      <span style={{ fontSize: 12, color: '#bbb' }}>≈ {formatKes(usdToKes(plan.priceUsd))}</span>
+                      <span style={{ fontSize: 10, color: '#ddd' }}>·</span>
+                      <span style={{ fontSize: 11, color: '#bbb', fontWeight: 600 }}>one-time fee</span>
                     </div>
                   </div>
 
-                  {/* Features */}
-                  <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 18px', display: 'flex', flexDirection: 'column', gap: 7, flex: 1 }}>
+                  {/* Features — now with emoji icons */}
+                  <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 18px', display: 'flex', flexDirection: 'column', gap: 9, flex: 1 }}>
                     {plan.features.map((f, i) => (
-                      <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                        <div style={{ width: 17, height: 17, borderRadius: '50%', background: plan.colorLight, border: `1px solid ${plan.colorBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>
-                          <FiCheck size={9} color={plan.color} strokeWidth={3} />
-                        </div>
-                        <span style={{ fontSize: 12, color: '#555', lineHeight: 1.4 }}>{f}</span>
+                      <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 9 }}>
+                        <span style={{ fontSize: 13, flexShrink: 0, lineHeight: 1.5 }}>{f.icon}</span>
+                        <span style={{ fontSize: 12, color: '#444', lineHeight: 1.5, fontFamily: "'DM Sans', sans-serif", fontWeight: 500 }}>{f.text}</span>
                       </li>
                     ))}
                   </ul>
@@ -711,7 +717,7 @@ export default function SubscriptionPage() {
                     className="plan-btn"
                     onClick={() => handleSelectPlan(plan)}
                     style={{
-                      width: '100%', padding: '11px', borderRadius: 50,
+                      width: '100%', padding: '12px', borderRadius: 50,
                       background: plan.popular ? plan.color : '#fff',
                       border: `1.5px solid ${plan.color}`,
                       color: plan.popular ? '#fff' : plan.color,

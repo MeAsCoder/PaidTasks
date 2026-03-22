@@ -1,15 +1,6 @@
-/**
- * pages/api/payhero/initiate.js
- *
- * Server-side API route that sends an M-Pesa STK Push via PayHero.
- * Runs on the server — credentials are NEVER exposed to the browser.
- *
- * POST /api/payhero/initiate
- * Body: { phone, amountKes, reference, planName, callbackUrl }
- *
- * PayHero STK Push endpoint:
- *   POST https://backend.payhero.co.ke/api/v2/payments
- */
+// ─── Add this OUTSIDE the handler, at the top of the file ────────────────────
+const recentRequests = new Map();
+const COOLDOWN_SECONDS = 30;
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -18,12 +9,10 @@ export default async function handler(req, res) {
 
   const { phone, amountKes, reference, planName, callbackUrl } = req.body;
 
-  // ── Validate incoming fields ──────────────────────────────────────────────
   if (!phone || !amountKes || !reference) {
     return res.status(400).json({ message: 'Missing required fields: phone, amountKes, reference' });
   }
 
-  // ── Read credentials from server-side env (no NEXT_PUBLIC_ prefix) ────────
   const authToken  = process.env.PAYHERO_AUTH_TOKEN;
   const channelId  = Number(process.env.PAYHERO_CHANNEL_ID);
 
@@ -32,7 +21,6 @@ export default async function handler(req, res) {
     return res.status(500).json({ message: 'Payment service is not configured. Please contact support.' });
   }
 
-  // ── Normalise phone to 254XXXXXXXXX ────────────────────────────────────────
   const normalizePhone = (p) => {
     const d = String(p).replace(/\D/g, '');
     if (d.startsWith('254') && d.length === 12) return d;
@@ -48,7 +36,30 @@ export default async function handler(req, res) {
     return res.status(400).json({ message: err.message });
   }
 
-  // ── Build STK Push payload ─────────────────────────────────────────────────
+  // ── ADD COOLDOWN GUARD HERE — after phone is normalised ───────────────────
+  const now = Date.now();
+  const lastRequest = recentRequests.get(normalizedPhone);
+
+  if (lastRequest) {
+    const secondsRemaining = COOLDOWN_SECONDS - Math.floor((now - lastRequest) / 1000);
+    if (secondsRemaining > 0) {
+      console.warn(`[PayHero Initiate] Cooldown active — ${secondsRemaining}s remaining for ${normalizedPhone}`);
+      return res.status(429).json({
+        message: `Please wait ${secondsRemaining} seconds before trying again.`,
+        retryAfter: secondsRemaining,
+      });
+    }
+  }
+
+  // Record this attempt
+  recentRequests.set(normalizedPhone, now);
+
+  // Clean up entries older than 5 minutes to avoid memory leaks
+  for (const [key, ts] of recentRequests.entries()) {
+    if (now - ts > 5 * 60 * 1000) recentRequests.delete(key);
+  }
+  // ── END COOLDOWN GUARD ────────────────────────────────────────────────────
+
   const payload = {
     amount:             amountKes,
     phone_number:       normalizedPhone,
@@ -60,7 +71,6 @@ export default async function handler(req, res) {
     callback_url:       callbackUrl,
   };
 
-  // ── POST to PayHero ────────────────────────────────────────────────────────
   try {
     const payheroRes = await fetch('https://backend.payhero.co.ke/api/v2/payments', {
       method:  'POST',
@@ -72,16 +82,16 @@ export default async function handler(req, res) {
     });
 
     const data = await payheroRes.json();
-
     console.log('[PayHero Initiate] Response:', JSON.stringify(data));
 
     if (!payheroRes.ok) {
-      const errMsg = data?.message || data?.error || data?.detail || `PayHero error (${payheroRes.status})`;
+      // Remove cooldown on PayHero rejection so user can retry
+      recentRequests.delete(normalizedPhone);
+      const errMsg = data?.error_message || data?.message || data?.error || `PayHero error (${payheroRes.status})`;
       console.error('[PayHero Initiate] Error from PayHero:', errMsg, data);
       return res.status(payheroRes.status).json({ message: errMsg });
     }
 
-    // Success — return checkout request ID to client
     return res.status(200).json({
       success:           true,
       checkoutRequestId: data.CheckoutRequestID || data.checkout_request_id || '',
@@ -90,6 +100,7 @@ export default async function handler(req, res) {
     });
 
   } catch (err) {
+    recentRequests.delete(normalizedPhone); // Remove on network error so user can retry
     console.error('[PayHero Initiate] Network error:', err);
     return res.status(500).json({ message: 'Failed to reach PayHero. Please try again.' });
   }
