@@ -31,7 +31,7 @@ const PLANS = [
   {
     id: 'basic',
     name: 'Starter',
-    priceUsd: 2.00,
+    priceUsd: 1.00,
     icon: '🌱',
     tagline: 'The perfect launchpad',
     badge: null,
@@ -50,7 +50,7 @@ const PLANS = [
   {
     id: 'silver',
     name: 'Pro',
-    priceUsd: 5.00,
+    priceUsd: 3.00,
     icon: '⚡',
     tagline: 'For serious earners',
     badge: '🔥 Best Value',
