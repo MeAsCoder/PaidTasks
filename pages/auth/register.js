@@ -94,7 +94,7 @@ export default function RegisterPage() {
           <div className="mt-2 text-center text-sm text-gray-600">
             <div className="bg-green-50 p-4 rounded-lg mb-4">
               <p className="text-green-800 font-medium">
-                🚀 Top earners make ${(150).toLocaleString()}+ monthly - start earning today!
+                🚀 Top earners make ${(1000).toLocaleString()}+ monthly - start earning today!
               </p>
             </div>
           </div>

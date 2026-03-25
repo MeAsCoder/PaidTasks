@@ -111,7 +111,7 @@ export default function LoginPage() {
           <div className="mt-2 text-center text-sm text-gray-600">
             <div className="bg-blue-50 p-4 rounded-lg mb-4">
               <p className="text-blue-800 font-medium">
-                💰 Average users earn ${(25).toLocaleString()} monthly completing simple tasks
+                💰 Average users earn ${(500).toLocaleString()}+ monthly completing simple tasks
               </p>
             </div>
           </div>
