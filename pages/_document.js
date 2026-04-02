@@ -8,8 +8,8 @@ export default function Document() {
         {/* Force light mode and consistent browser theme */}
         <meta name="color-scheme" content="light only" />
         <meta name="theme-color" content="#ffffff" />
-        
-         <link rel="icon" type="image/png" href="/favcon.png" />
+
+         <link rel="icon" type="image/png" href="/favicon.png" />
       </Head>
       <body className="antialiased">
         <Main />
