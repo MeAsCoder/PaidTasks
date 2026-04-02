@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/context/AuthContext'
+import Image from 'next/image'
 
 export default function Navbar() {
   const router = useRouter()
@@ -178,9 +179,14 @@ export default function Navbar() {
 
 function LogoMark() {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
-      <span style={{ fontFamily: "'Sora', sans-serif", fontWeight: 800, fontSize: 22, color: '#111', letterSpacing: '-0.5px' }}>Earn</span>
-      <span style={{ fontFamily: "'Sora', sans-serif", fontWeight: 800, fontSize: 22, color: '#E8541A', letterSpacing: '-0.5px', fontStyle: 'italic' }}>Flex</span>
+    <div style={{ display: 'flex', alignItems: 'center' }}>
+      <Image
+        src="/favcon.png"
+        alt="EarnFlex Logo"
+        width={40}
+        height={40}
+        priority
+      />
     </div>
   )
 }

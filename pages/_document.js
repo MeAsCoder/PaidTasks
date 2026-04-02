@@ -9,7 +9,7 @@ export default function Document() {
         <meta name="color-scheme" content="light only" />
         <meta name="theme-color" content="#ffffff" />
 
-         <link rel="icon" type="image/png" href="/favicon.png" />
+         <link rel="icon" type="image/png" href="/favcon.png" />
       </Head>
       <body className="antialiased">
         <Main />
