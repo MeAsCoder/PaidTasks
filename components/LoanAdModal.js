@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 
 const LOAN_WEBSITE_URL = 'https://newnyotaloan.vercel.app/'
 const SHOW_AFTER_MS = 10000
-const DISMISS_COOLDOWN_MS = 300000
+const DISMISS_COOLDOWN_MS = 60000;
 
 export default function LoanAdModal() {
   const [visible, setVisible] = useState(false)
