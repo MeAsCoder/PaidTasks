@@ -6,6 +6,7 @@ import ProtectedRoute from '../components/ProtectedRoute';
 import { auth } from '@/lib/firebase';
 import { getUserProfile } from '@/lib/userService';
 import { getEarningsSummary, getRecentActivity, getWeeklyEarnings } from '@/lib/earningsService';
+import LoanAdModal from '../components/LoanAdModal'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const fmt = (n) => `$${Number(n || 0).toFixed(2)}`;
@@ -94,6 +95,7 @@ function Dashboard() {
 
   return (
     <Layout title="My Dashboard">
+      <LoanAdModal />
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Sora:wght@700;800&family=DM+Sans:wght@400;500;600;700&display=swap');
         * { box-sizing: border-box; }

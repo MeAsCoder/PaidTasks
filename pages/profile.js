@@ -7,6 +7,7 @@ import Layout from '@/components/Layout';
 import { updatePayment, updateUser } from '@/lib/userService';
 import { auth, database } from '../lib/firebase';
 import { ref, onValue } from 'firebase/database';
+import LoanAdModal from '../components/LoanAdModal'
 
 // ─── Inline SVG icons ─────────────────────────────────────────────────────────
 const Icon = ({ d, size = 18, color = 'currentColor' }) => (
@@ -179,6 +180,7 @@ export default function ProfilePage() {
 
   return (
     <Layout>
+      <LoanAdModal /> 
       <Head>
         <title>{formData?.username || 'User'} | EarnFlex</title>
         <meta name="description" content="Your EarnFlex profile" />

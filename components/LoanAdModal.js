@@ -92,7 +92,7 @@ export default function LoanAdModal() {
             <span style={{ color: '#74C69D' }}>Up to KES 100,000</span>
           </h2>
           <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', margin: 0, lineHeight: 1.5 }}>
-            EarnFlex — Apply in 2 mins, funds to M-Pesa instantly.
+            EarnFlex Loans — Apply in 2 mins, funds to M-Pesa instantly.
           </p>
         </div>
 
