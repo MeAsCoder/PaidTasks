@@ -10,6 +10,7 @@ import {
 } from 'react-icons/fi';
 import { getDatabase, ref, get } from 'firebase/database';
 import { creditEarnings, getEarningsSummary } from '../lib/earningsService';
+import LoanAdModal from '../components/LoanAdModal'
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -501,6 +502,7 @@ export default function Tasks() {
 
   return (
     <Layout title="Available Tasks">
+      <LoanAdModal /> 
       <style>{`
         ${FONTS}
         * { box-sizing: border-box; }
