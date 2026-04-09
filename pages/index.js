@@ -51,7 +51,7 @@ function Navbar() {
     
        {/* Logo */}
 <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
-  <img src="/handshakelogo.png" alt="Logo" style={{ height: 120, width: 'auto', objectFit: 'contain' }} />
+  <img src="/handshakelogo.png" alt="Logo" style={{ height: 70, width: 'auto', objectFit: 'contain' }} />
 </Link>
 
         {/* Desktop Nav */}

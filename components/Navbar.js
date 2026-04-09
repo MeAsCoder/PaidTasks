@@ -183,8 +183,8 @@ function LogoMark() {
       <Image
         src="/handshakelogo.png"
         alt="HandShake AI Logo"
-        width={120}
-        height={200}
+        width={100}
+        height={70}
         style={{ objectFit: 'contain' }}
         priority
       />
