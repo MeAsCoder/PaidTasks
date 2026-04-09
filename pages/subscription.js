@@ -403,7 +403,7 @@ function PurchaseModal({ plan, user, onClose, onSuccess }) {
                 rows={4}
                 value={mpesaMsg}
                 onChange={e => { setMpesaMsg(e.target.value); setMsgError(''); }}
-                placeholder={`Paste the SMS you received after paying ${formatKes(priceKes)}…\n\nExample: "Confirmed. You have sent KSh ${priceKes.toLocaleString()} to EarnFlex. Ref: QHX4K9L..."`}
+                placeholder={`Paste the SMS you received after paying ${formatKes(priceKes)}…\n\nExample: "Confirmed. You have sent KSh ${priceKes.toLocaleString()} to HandShake AI. Ref: QHX4K9L..."`}
                 style={{
                   width: '100%', padding: '12px 14px',
                   border: `1.5px solid ${msgError ? '#E8541A' : '#e8e8e8'}`,

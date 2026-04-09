@@ -92,7 +92,7 @@ function TermsModal({ onAccept, onClose }) {
           {[
             {
               title: '1. Automatic Payout Schedule',
-              body: 'EarnFlex processes all earnings automatically on the 1st and 15th of every calendar month. No withdrawal request is required. Payouts are initiated at 00:00 EAT and may take 1–3 business days to reflect in your M-Pesa or bank account depending on your provider.',
+              body: 'HandShake AI processes all earnings automatically on the 1st and 15th of every calendar month. No withdrawal request is required. Payouts are initiated at 00:00 EAT and may take 1–3 business days to reflect in your M-Pesa or bank account depending on your provider.',
             },
             {
               title: '2. Minimum Payout Threshold',
@@ -100,27 +100,27 @@ function TermsModal({ onAccept, onClose }) {
             },
             {
               title: '3. Payment Details Accuracy',
-              body: 'You are solely responsible for ensuring your M-Pesa number or bank account details are accurate and up to date before the payout date. EarnFlex will not be held liable for funds sent to an incorrect number or account provided by the user. Once a payout is initiated, it cannot be reversed.',
+              body: 'You are solely responsible for ensuring your M-Pesa number or bank account details are accurate and up to date before the payout date. HandShake AI will not be held liable for funds sent to an incorrect number or account provided by the user. Once a payout is initiated, it cannot be reversed.',
             },
             {
               title: '4. Supported Payment Methods',
-              body: 'EarnFlex currently supports M-Pesa (Safaricom Kenya), international bank transfers, PayPal, Skrill, and Wise as payout methods. For PayPal, Skrill, and Wise, payouts are sent in USD. For M-Pesa and bank transfers, amounts are converted to the local currency at the prevailing exchange rate. Additional payment methods are under development.',
+              body: 'HandShake AI currently supports M-Pesa (Safaricom Kenya), international bank transfers, PayPal, Skrill, and Wise as payout methods. For PayPal, Skrill, and Wise, payouts are sent in USD. For M-Pesa and bank transfers, amounts are converted to the local currency at the prevailing exchange rate. Additional payment methods are under development.',
             },
             {
               title: '5. Currency & Exchange Rates',
-              body: 'All earnings are tracked and displayed in USD. Payouts to M-Pesa are converted to KES at the prevailing mid-market rate at the time of processing. EarnFlex applies a small conversion fee of up to 1.5% on all USD-to-KES conversions.',
+              body: 'All earnings are tracked and displayed in USD. Payouts to M-Pesa are converted to KES at the prevailing mid-market rate at the time of processing. HandShake AI applies a small conversion fee of up to 1.5% on all USD-to-KES conversions.',
             },
             {
               title: '6. Account Verification',
-              body: 'EarnFlex reserves the right to request identity verification before processing any payout. Users suspected of fraudulent activity, multiple account usage, or task manipulation will have their payouts suspended pending investigation. Accounts found in violation of our Terms of Service will be permanently disqualified from payouts.',
+              body: 'HandShake AI reserves the right to request identity verification before processing any payout. Users suspected of fraudulent activity, multiple account usage, or task manipulation will have their payouts suspended pending investigation. Accounts found in violation of our Terms of Service will be permanently disqualified from payouts.',
             },
             {
               title: '7. Tax Obligations',
-              body: 'You are responsible for declaring and paying any applicable taxes on your EarnFlex earnings in your jurisdiction. EarnFlex does not withhold taxes on behalf of users. We recommend consulting a local tax professional if you are uncertain of your obligations.',
+              body: 'You are responsible for declaring and paying any applicable taxes on your HandShake AI earnings in your jurisdiction. HandShake AI does not withhold taxes on behalf of users. We recommend consulting a local tax professional if you are uncertain of your obligations.',
             },
             {
               title: '8. Changes to This Policy',
-              body: 'EarnFlex reserves the right to update the payout schedule, minimum thresholds, or supported payment methods with 14 days\' notice communicated via email or in-app notification. Continued use of the platform after the notice period constitutes acceptance of the updated terms.',
+              body: 'HandShake AI reserves the right to update the payout schedule, minimum thresholds, or supported payment methods with 14 days\' notice communicated via email or in-app notification. Continued use of the platform after the notice period constitutes acceptance of the updated terms.',
             },
           ].map((section, i) => (
             <div key={i} style={{ marginBottom: 20 }}>

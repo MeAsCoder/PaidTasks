@@ -66,8 +66,8 @@ export default async function handler(req, res) {
     channel_id:         channelId,
     provider:           'm-pesa',
     external_reference: reference,
-    customer_name:      'EarnFlex User',
-    description:        `EarnFlex ${planName || 'Subscription'} Activation`,
+    customer_name:      'HandShake AI User',
+    description:        `HandShake AI ${planName || 'Subscription'} Activation`,
     callback_url:       callbackUrl,
   };
 

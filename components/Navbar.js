@@ -179,14 +179,16 @@ export default function Navbar() {
 
 function LogoMark() {
   return (
-    <div style={{ display: 'flex', alignItems: 'center' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
       <Image
-        src="/favcon.png"
-        alt="EarnFlex Logo"
-        width={40}
-        height={40}
+        src="/handshakelogo.png"
+        alt="HandShake AI Logo"
+        width={120}
+        height={200}
+        style={{ objectFit: 'contain' }}
         priority
       />
+     
     </div>
   )
 }

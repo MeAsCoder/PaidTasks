@@ -292,12 +292,12 @@ function generateTranscribeSteps() {
     {
       id: 3, type: 'transcribe',
       context: 'Customer service call recording (25 seconds)',
-      givenTranscript: '"Thank you for calling EarnFlex support. My name is Grace and I\'ll be assisting you today. Could you please provide your account number?"',
+      givenTranscript: '"Thank you for calling HandShake AI support. My name is Grace and I\'ll be assisting you today. Could you please provide your account number?"',
       options: [
-        '"Thank you for calling EarnFlex support. My name is Grace and I\'ll be assisting you today. Could you please provide your account number?"',
-        '"Thank you for calling EarnFlex support. My name is Grace and ill be assisting you today. Can you please provide you account number?"',
-        '"Thank you for calling EarnFlex support. My name is Grace and I will be assisting you today. Could you please provide your account numbers?"',
-        '"Thanks for calling EarnFlex support. My name is Grace and I\'ll be assisting you today. Could you please provide you\'re account number?"',
+        '"Thank you for calling HandShake AI support. My name is Grace and I\'ll be assisting you today. Could you please provide your account number?"',
+        '"Thank you for calling HandShake AI support. My name is Grace and ill be assisting you today. Can you please provide you account number?"',
+        '"Thank you for calling HandShake AI support. My name is Grace and I will be assisting you today. Could you please provide your account numbers?"',
+        '"Thanks for calling HandShake AI support. My name is Grace and I\'ll be assisting you today. Could you please provide you\'re account number?"',
       ],
     },
     {

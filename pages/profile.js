@@ -182,8 +182,8 @@ export default function ProfilePage() {
     <Layout>
       <LoanAdModal /> 
       <Head>
-        <title>{formData?.username || 'User'} | EarnFlex</title>
-        <meta name="description" content="Your EarnFlex profile" />
+        <title>{formData?.username || 'User'} | HandShake AI</title>
+        <meta name="description" content="Your HandShake AI profile" />
       </Head>
 
       <style>{`

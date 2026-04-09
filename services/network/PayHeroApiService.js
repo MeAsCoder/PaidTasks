@@ -51,8 +51,8 @@ class PayHeroApiService {
       channel_id:         CHANNEL_ID,
       provider:           'm-pesa',
       external_reference: reference,
-      customer_name:      'EarnFlex User',
-      description:        description || 'EarnFlex subscription activation',
+      customer_name:      'HandShake AI User',
+      description:        description || 'HandShake AI subscription activation',
       callback_url:       callbackUrl,
     };
 

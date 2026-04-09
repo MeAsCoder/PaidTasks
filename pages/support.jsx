@@ -1,7 +1,7 @@
 /**
  * pages/support.jsx
  *
- * EarnFlex Support Centre — FAQ, contact form, ticket submission, and resources.
+ * HandShake AI Support Centre — FAQ, contact form, ticket submission, and resources.
  */
 
 import { useState } from 'react';
@@ -117,15 +117,15 @@ const FAQ_CATEGORIES = [
     questions: [
       {
         q: 'How is my personal data used?',
-        a: 'Your personal data is used solely to operate your EarnFlex account and process payouts. We do not sell your data to third parties. Survey responses are anonymised before being shared with our clients. Please review our Privacy Policy for full details.',
+        a: 'Your personal data is used solely to operate your HandShake AI account and process payouts. We do not sell your data to third parties. Survey responses are anonymised before being shared with our clients. Please review our Privacy Policy for full details.',
       },
       {
         q: 'Is my payment information secure?',
         a: 'Yes. Payment details are encrypted and stored securely in our database. We never store full bank account credentials or M-Pesa PINs. All transactions are processed through verified payment gateways.',
       },
       {
-        q: 'I received a suspicious email claiming to be from EarnFlex. What should I do?',
-        a: 'EarnFlex will only communicate with you from official @earnflex.com email addresses. If you receive a suspicious message asking for your password, PIN, or payment details, do not respond. Report it to support@earnflex.com immediately.',
+        q: 'I received a suspicious email claiming to be from HandShake AI. What should I do?',
+        a: 'HandShake AI will only communicate with you from official @HandShake AI.com email addresses. If you receive a suspicious message asking for your password, PIN, or payment details, do not respond. Report it to support@HandShake AI.com immediately.',
       },
     ],
   },
@@ -361,10 +361,10 @@ export default function SupportPage() {
                       {
                         icon: <FiMail size={16} color="#E8541A" />,
                         title: 'Email Support',
-                        desc: 'support@earnflex.com',
+                        desc: 'support@HandShake AI.com',
                         sub: 'Response within 2 hours',
                         bg: '#fff7ed',
-                        action: () => window.location.href = 'mailto:support@earnflex.com',
+                        action: () => window.location.href = 'mailto:support@HandShake AI.com',
                       },
                       {
                         icon: <FiMessageCircle size={16} color="#7C3AED" />,

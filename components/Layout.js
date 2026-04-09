@@ -8,7 +8,7 @@ const fadeIn = {
   visible:  { opacity: 1, y: 0 }
 }
 
-export default function Layout({ children, title = "EarnFlex - Earn Money Online" }) {
+export default function Layout({ children, title = "HandShake AI - Earn Money Online" }) {
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#fafafa', fontFamily: "'DM Sans', sans-serif" }}>
       <style>{`
@@ -193,7 +193,7 @@ export default function Layout({ children, title = "EarnFlex - Earn Money Online
           {/* Bottom bar */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
             <p style={{ fontSize: 13, color: '#bbb', margin: 0 }}>
-              © {new Date().getFullYear()} EarnFlex. All rights reserved.
+              © {new Date().getFullYear()} HandShake AI. All rights reserved.
             </p>
             <div style={{ display: 'flex', gap: 20 }}>
               {[
