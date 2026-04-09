@@ -68,7 +68,7 @@ function Navbar() {
             Login
           </Link>
           <Link href="/tasks" style={{ padding: '9px 22px', borderRadius: 50, background: '#E8541A', color: '#fff', fontSize: 14, fontWeight: 700, textDecoration: 'none' }}>
-            View Opportunities
+            Get Started
           </Link>
         </div>
 
@@ -362,7 +362,7 @@ export default function Home() {
           </p>
           <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
             <Link href="/tasks" className="cta-btn" style={{ padding: '14px 36px', borderRadius: 50, background: '#E8541A', color: '#fff', fontSize: 16, fontWeight: 700, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-              View Opportunities <Icon d={icons.arrowRight} size={18} />
+              Get Started Now <Icon d={icons.arrowRight} size={18} />
             </Link>
             <Link href="#about" className="outline-btn" style={{ padding: '14px 36px', borderRadius: 50, border: '1.5px solid #222', color: '#222', fontSize: 16, fontWeight: 600, textDecoration: 'none' }}>
               Learn More
