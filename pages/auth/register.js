@@ -50,10 +50,15 @@ export default function RegisterPage() {
       // Use AuthContext signup method
       await signup(formData.email, formData.password, {
         name: formData.name,
-        membership: 'Bronze', // Default membership level
+        membership: 'Bronze',
         balance: 0,
         qualityScore: 0
       });
+
+      // 🔥 Fire Google Ads conversion on successful registration
+      if (typeof window !== 'undefined' && typeof gtag === 'function') {
+        gtag('event', 'conversion', { send_to: 'AW-18053132535/fcAHCNq-9ZgcEPfhs6BD' });
+      }
 
       // Redirect to dashboard after successful registration
       router.push('/dashboard');

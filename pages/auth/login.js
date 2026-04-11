@@ -57,6 +57,11 @@ export default function LoginPage() {
       switch (provider) {
         case 'google':
           await signInWithGoogle();
+
+          // 🔥 Fire Google Ads conversion on successful Google sign-in
+          if (typeof window !== 'undefined' && typeof gtag === 'function') {
+            gtag('event', 'conversion', { send_to: 'AW-18053132535/fcAHCNq-9ZgcEPfhs6BD' });
+          }
           break;
         case 'facebook':
           await signInWithFacebook();
