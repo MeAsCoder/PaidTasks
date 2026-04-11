@@ -9,7 +9,7 @@ export default function Document() {
         <meta name="color-scheme" content="light only" />
         <meta name="theme-color" content="#ffffff" />
 
-         <link rel="icon" type="image/png" href="/handshakelogo.png" />
+        <link rel="icon" type="image/png" href="/handshakelogo.png" />
       </Head>
       <body className="antialiased">
         <Main />
@@ -17,7 +17,7 @@ export default function Document() {
 
         {/* ── Google Ads Tag ── */}
         <Script
-          src="https://www.googletagmanager.com/gtag/js?id=AW-18025452387"
+          src="https://www.googletagmanager.com/gtag/js?id=AW-18053132535"
           strategy="afterInteractive"
         />
         <Script
@@ -28,7 +28,7 @@ export default function Document() {
               window.dataLayer = window.dataLayer || [];
               function gtag(){dataLayer.push(arguments);}
               gtag('js', new Date());
-              gtag('config', 'AW-18025452387');
+              gtag('config', 'AW-18053132535');
             `,
           }}
         />
