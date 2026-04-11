@@ -3,6 +3,7 @@ import { useRouter } from 'next/router'
 import { AuthProvider } from '../context/AuthContext' // Import AuthProvider
 import Layout from '../components/Layout'
 import LoadingSpinner from '../components/LoadingSpinner'
+import { Analytics } from '@vercel/analytics/next'
 import '../styles/globals.css'
 
 export default function MyApp({ Component, pageProps }) {
@@ -26,10 +27,11 @@ export default function MyApp({ Component, pageProps }) {
 
   return (
     <AuthProvider>
-     
+      <>
         {pageLoading && <LoadingSpinner />}
         <Component {...pageProps} />
-      
+        <Analytics />
+      </>
     </AuthProvider>
   )
 }
