@@ -25,6 +25,8 @@ const icons = {
   clock: "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zM12 6v6l4 2",
   star: "M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z",
   award: "M12 15a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM8.21 13.89L7 23l5-3 5 3-1.21-9.12",
+  // New smartphone icon for app download
+  smartphone: "M17 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2zM12 18h.01",
 };
 
 // ─── Navbar ───────────────────────────────────────────────────────────────────
@@ -272,6 +274,13 @@ function FAQSection() {
 export default function Home() {
   const [activeStep, setActiveStep] = useState(0);
 
+  // ========== REPLACE WITH YOUR ACTUAL PLAY STORE LINK AND APP ICON ==========
+  // Replace this URL with your real Google Play Store link
+  const PLAYSTORE_URL = "https://play.google.com/store/apps/details?id=com.payingsurveys.instanttompesa";
+  // Optional: If you have a custom app icon image, uncomment and use it inside the button
+  // const APP_ICON_URL = "/your-app-icon.png";
+  // ============================================================================
+
   const testimonials = [
     { name: "Sarah Johnson", role: "Freelance Designer", country: "🇺🇸 United States", content: "HandShake AI has completely transformed how I earn online. I made $1,200 in my first month completing simple tasks in my spare time!", earnings: "$1,200/mo" },
     { name: "Wanjiru Kamau", role: "College Student", country: "🇰🇪 Kenya", content: "HandShake AI gives me flexibility to earn around $320/month between classes. It covers all my transport and food expenses!", earnings: "$320/mo" },
@@ -337,12 +346,34 @@ export default function Home() {
         .cta-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(232,84,26,0.35) !important; }
         .outline-btn { transition: background 0.2s, color 0.2s; }
         .outline-btn:hover { background: #111 !important; color: #fff !important; }
+        /* Play Store button styles */
+        .playstore-btn {
+          padding: 14px 28px;
+          border-radius: 50px;
+          background: #fff;
+          border: 1.5px solid #E8541A;
+          color: #E8541A;
+          font-size: 16px;
+          font-weight: 600;
+          text-decoration: none;
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          transition: all 0.2s;
+        }
+        .playstore-btn:hover {
+          background: #E8541A;
+          color: #fff;
+          transform: translateY(-2px);
+          box-shadow: 0 6px 14px rgba(232,84,26,0.25);
+        }
         @media (max-width: 768px) {
           .hero-title { font-size: 36px !important; }
           .stats-grid { grid-template-columns: 1fr 1fr !important; }
           .why-grid { grid-template-columns: 1fr !important; }
           .steps-layout { flex-direction: column !important; }
           .steps-panel { display: none !important; }
+          .playstore-btn { padding: 12px 20px; font-size: 14px; }
         }
       `}</style>
 
@@ -367,6 +398,31 @@ export default function Home() {
             <Link href="#about" className="outline-btn" style={{ padding: '14px 36px', borderRadius: 50, border: '1.5px solid #222', color: '#222', fontSize: 16, fontWeight: 600, textDecoration: 'none' }}>
               Learn More
             </Link>
+            {/* NEW: Play Store Download Button */}
+           <a
+            href={PLAYSTORE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="playstore-btn"
+            style={{
+              padding: '14px 28px',
+              borderRadius: 50,
+              background: '#fff',
+              border: '1.5px solid #E8541A',
+              color: '#E8541A',
+              fontSize: 16,
+              fontWeight: 600,
+              textDecoration: 'none',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              transition: 'all 0.2s',
+              animation: 'pulseGlow 2s infinite',
+            }}
+          >
+            <Icon d={icons.smartphone} size={18} />
+            <span>Download our Android app and unlock the experience 🚀</span>
+          </a>
           </div>
         </div>
       </section>
