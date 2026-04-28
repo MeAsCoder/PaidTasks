@@ -280,7 +280,7 @@ function TransactionFlow() {
 
 // ─── App Download Feature (exactly as per image) ───────────────────────────────
 function AppDownloadSection() {
-  const PLAYSTORE_URL = "https://play.google.com/store/apps/details?id=com.global.remotepaidjobs";
+  const PLAYSTORE_URL = "https://play.google.com/store/apps/details?id=com.rewardedsurveys.tompesa";
 
   return (
     <div style={{
