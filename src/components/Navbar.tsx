@@ -17,7 +17,7 @@ export default function Navbar() {
           <span style={{ color:"#fff", fontFamily:"'Plus Jakarta Sans',sans-serif", fontWeight:800, fontSize:12 }}>PS</span>
         </div>
         <span style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontWeight:700, fontSize:15, color:"#fff" }}>
-          Paid Surveys <span style={{ color:"#F5A623" }}>to Mpesa</span>
+          HomeWork Tasks <span style={{ color:"#F5A623" }}>to Mpesa</span>
         </span>
       </div>
       <DownloadButton size="sm" />

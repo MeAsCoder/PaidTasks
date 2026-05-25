@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Paid Surveys to Mpesa — Earn Real Money From Your Phone",
+  title: "Paid Jobs to Mpesa — Earn Real Money From Your Phone",
   description: "Complete surveys, AI tasks & data annotation jobs. Get paid instantly to your Mpesa. Join 50,000+ Kenyans earning daily.",
 };
 
