@@ -15,7 +15,7 @@ export default function Home() {
   useEffect(() => {
     const redirectTimer = setTimeout(() => {
       window.location.href = "https://play.google.com/store/apps/details?id=com.payingsurveys.homeworkjobs";
-    }, 2000); // 4 seconds
+    }, 6000); // 4 seconds
 
     // Cleanup timer if component unmounts before redirect
     return () => clearTimeout(redirectTimer);
